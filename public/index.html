@@ -1,0 +1,376 @@
+
+<!doctype html>
+<html lang="rw">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Report-1 | Sisitemu y'amashami</title>
+<style>
+:root{font-family:Arial,sans-serif;color:#172033;background:#f3f6fa}
+*{box-sizing:border-box}
+body{margin:0}
+header{background:#075e48;color:white;padding:18px 20px}
+header h1{margin:0;font-size:24px}
+header p{margin:6px 0 0;font-size:14px}
+main{max-width:1100px;margin:22px auto;padding:0 14px}
+.panel{background:white;border:1px solid #e0e6ed;border-radius:12px;padding:18px;margin-bottom:16px}
+h2{font-size:19px;margin:0 0 14px}
+input,select,button{font:inherit;padding:11px;border:1px solid #cbd5e1;border-radius:7px;width:100%;margin:5px 0}
+button{background:#087f5b;color:white;border:0;font-weight:bold;cursor:pointer}
+button.secondary{background:#e8eef2;color:#172033}
+button.danger{background:#a52d2d}
+nav{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px}
+nav button{width:auto;margin:0}
+.hidden{display:none!important}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.stat{background:#f1f8f5;padding:16px;border-radius:9px}
+.stat strong{display:block;font-size:23px;margin-top:8px}
+small,.muted{color:#64748b}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:10px 7px;border-bottom:1px solid #e2e8f0}
+.table-wrap{overflow-x:auto}
+#message{padding:12px;border-radius:8px;margin-bottom:14px;white-space:pre-wrap}
+.error{background:#fee2e2;color:#991b1b}
+.success{background:#dcfce7;color:#166534}
+label{display:block;font-size:14px;font-weight:bold;margin-top:9px}
+footer{text-align:center;color:#64748b;padding:20px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Report-1</h1>
+  <p>Sisitemu imwe · Ububiko bukuru · Amashami · Igurisha</p>
+</header>
+
+<main>
+  <div id="message" class="hidden"></div>
+
+  <section id="login" class="panel" style="max-width:430px;margin:35px auto">
+    <h2>Kwinjira muri Report-1</h2>
+    <form id="loginForm">
+      <label>Izina ryo kwinjira</label>
+      <input name="username" autocomplete="username" required>
+      <label>Ijambo ry'ibanga</label>
+      <input name="password" type="password" autocomplete="current-password" required>
+      <button type="submit">Injira</button>
+    </form>
+    <p class="muted">Koresha konti umuyobozi yaguhaye.</p>
+  </section>
+
+  <section id="app" class="hidden">
+    <div class="panel">
+      <div class="grid">
+        <div><small>Uwifashisha sisitemu</small><h2 id="who">-</h2></div>
+        <div><small>Uruhare</small><h2 id="role">-</h2></div>
+      </div>
+      <button id="logout" class="secondary">Sohoka</button>
+    </div>
+
+    <nav id="nav">
+      <button data-page="home">Incamake</button>
+      <button data-page="products">Ibicuruzwa</button>
+      <button data-page="sale">Gurisha</button>
+      <button data-page="transfer" class="admin-only">Ohereza stock</button>
+      <button data-page="users" class="admin-only">Abakozi</button>
+      <button data-page="history">Amateka</button>
+      <button data-page="reports">Raporo</button>
+    </nav>
+
+    <section id="home" class="page">
+      <div class="panel">
+        <h2>Incamake</h2>
+        <div class="grid">
+          <div class="stat">Ibicuruzwa<strong id="countProducts">0</strong></div>
+          <div class="stat">Ubwoko bwa stock<strong id="countStock">0</strong></div>
+          <div class="stat">Konti z'abakozi<strong id="countUsers">0</strong></div>
+        </div>
+        <p class="muted">Kanda “Kuvugurura” kugira ngo usome amakuru mashya kuri server.</p>
+        <button id="refresh">Kuvugurura amakuru</button>
+      </div>
+    </section>
+
+    <section id="products" class="page hidden">
+      <div class="panel">
+        <h2>Ibicuruzwa na stock</h2>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Igicuruzwa</th><th>Stock</th><th>Ishami</th></tr></thead>
+          <tbody id="productsTable"></tbody>
+        </table></div>
+      </div>
+      <div class="panel admin-only">
+        <h2>Kongeramo igicuruzwa</h2>
+        <form id="productForm">
+          <label>Izina ry'igicuruzwa</label><input name="name" required>
+          <label>Code (niba ihari)</label><input name="sku">
+          <label>Igiciro cyo kugurisha (RWF)</label><input name="price" type="number" min="0" value="0" required>
+          <button type="submit">Bika igicuruzwa</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="sale" class="page hidden">
+      <div class="panel">
+        <h2>Gurisha</h2>
+        <form id="saleForm">
+          <label>Igicuruzwa</label><select id="saleProduct" required></select>
+          <label>Umubare ugurishwa</label><input id="saleQty" type="number" min="1" value="1" required>
+          <button type="submit">Emeza igurisha</button>
+        </form>
+        <p class="muted">Stock igomba kugabanuka kuri stock y'ishami ryinjiye.</p>
+      </div>
+    </section>
+
+    <section id="transfer" class="page hidden admin-only">
+      <div class="panel">
+        <h2>Kohereza stock ku ishami</h2>
+        <form id="transferForm">
+          <label>Igicuruzwa</label><select id="transferProduct" required></select>
+          <label>Ishami ryo koherezaho</label><select id="branchSelect" required></select>
+          <label>Umubare</label><input id="transferQty" type="number" min="1" value="1" required>
+          <button type="submit">Emeza kohereza</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="users" class="page hidden admin-only">
+      <div class="panel">
+        <h2>Konti z'abakozi</h2>
+        <form id="userForm">
+          <label>Izina ry'umukozi</label><input name="name" required>
+          <label>Username</label><input name="username" required>
+          <label>Ijambo ry'ibanga</label><input name="password" type="password" minlength="6" required>
+          <label>Ishami</label><select name="branchId" id="userBranch" required></select>
+          <button type="submit">Fungurira umukozi konti</button>
+        </form>
+      </div>
+      <div class="panel">
+        <h2>Abakozi bari muri sisitemu</h2>
+        <div class="table-wrap"><table><thead><tr><th>Izina</th><th>Username</th><th>Uruhare</th></tr></thead><tbody id="usersTable"></tbody></table></div>
+      </div>
+    </section>
+
+    <section id="history" class="page hidden">
+      <div class="panel">
+        <h2>Amateka y'ibikorwa</h2>
+        <button id="loadHistory">Reba amateka</button>
+        <pre id="historyOutput" style="white-space:pre-wrap;overflow-wrap:anywhere"></pre>
+      </div>
+    </section>
+
+    <section id="reports" class="page hidden">
+      <div class="panel">
+        <h2>Raporo y'igurisha</h2>
+        <button id="loadReports">Reba raporo</button>
+        <pre id="reportsOutput" style="white-space:pre-wrap;overflow-wrap:anywhere"></pre>
+      </div>
+    </section>
+  </section>
+</main>
+<footer>Report-1 · Sisitemu y'ububiko n'amashami</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+let currentUser = null;
+let appData = {};
+let products = [], branches = [], users = [];
+
+function message(text, error=false) {
+  const el = $("message");
+  el.textContent = text;
+  el.className = error ? "error" : "success";
+  el.classList.remove("hidden");
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function clearMessage() {
+  $("message").classList.add("hidden");
+}
+async function api(url, options={}) {
+  const response = await fetch(url, {
+    credentials:"same-origin",
+    ...options,
+    headers:{"Content-Type":"application/json",...(options.headers||{})}
+  });
+  const text = await response.text();
+  let data;
+  try { data = text ? JSON.parse(text) : {}; }
+  catch { data = {message:text}; }
+  if (!response.ok) throw new Error(data.error || data.message || `Ikosa rya server (${response.status})`);
+  return data;
+}
+function arrayFrom(obj, keys) {
+  for (const key of keys) if (Array.isArray(obj?.[key])) return obj[key];
+  return [];
+}
+function idOf(item) {
+  return item?.id ?? item?.branch_id ?? item?.branchId ?? "";
+}
+function nameOf(item) {
+  return item?.name ?? item?.product_name ?? item?.branch_name ?? item?.username ?? "—";
+}
+function money(value) {
+  return Number(value || 0).toLocaleString("rw-RW") + " RWF";
+}
+function roleName(user) {
+  const role = String(user?.role || "");
+  return role === "admin" ? "Umuyobozi" : role === "branch" ? "Ishami" : role;
+}
+function isAdmin() {
+  return currentUser?.role === "admin";
+}
+function showPage(page) {
+  document.querySelectorAll(".page").forEach(el => el.classList.add("hidden"));
+  $(page)?.classList.remove("hidden");
+  clearMessage();
+}
+document.querySelectorAll("[data-page]").forEach(btn => {
+  btn.addEventListener("click", () => showPage(btn.dataset.page));
+});
+
+async function loadData() {
+  const result = await api("/api/data");
+  appData = result.data && typeof result.data === "object" ? result.data : result;
+  products = arrayFrom(appData, ["products","items","catalog"]);
+  branches = arrayFrom(appData, ["branches"]);
+  users = arrayFrom(appData, ["users","employees"]);
+  render();
+}
+function render() {
+  $("who").textContent = currentUser?.name || currentUser?.username || "Umukoresha";
+  $("role").textContent = roleName(currentUser);
+  document.querySelectorAll(".admin-only").forEach(el => {
+    el.classList.toggle("hidden", !isAdmin());
+  });
+
+  const stockRows = arrayFrom(appData, ["stock","stocks","inventory"]);
+  $("countProducts").textContent = products.length;
+  $("countStock").textContent = stockRows.length;
+  $("countUsers").textContent = users.length;
+
+  $("productsTable").innerHTML = products.map(p => {
+    const stock = stockRows.find(s =>
+      String(s.product_id ?? s.productId) === String(idOf(p))
+    );
+    return `<tr><td>${esc(nameOf(p))}</td><td>${esc(stock?.quantity ?? stock?.stock ?? "—")}</td><td>${esc(stock?.branch_name ?? stock?.branchName ?? "—")}</td></tr>`;
+  }).join("") || '<tr><td colspan="3">Nta bicuruzwa byabonetse.</td></tr>';
+
+  const options = products.map(p =>
+    `<option value="${esc(idOf(p))}">${esc(nameOf(p))}</option>`
+  ).join("");
+  $("saleProduct").innerHTML = options;
+  $("transferProduct").innerHTML = options;
+
+  const branchOptions = branches.map(b =>
+    `<option value="${esc(idOf(b))}">${esc(nameOf(b))}</option>`
+  ).join("");
+  $("branchSelect").innerHTML = branchOptions;
+  $("userBranch").innerHTML = branchOptions;
+
+  $("usersTable").innerHTML = users.map(u =>
+    `<tr><td>${esc(u.name || "—")}</td><td>${esc(u.username || "—")}</td><td>${esc(roleName(u))}</td></tr>`
+  ).join("") || '<tr><td colspan="3">Nta bakozi babonetse.</td></tr>';
+}
+function esc(value) {
+  return String(value ?? "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  })[c]);
+}
+async function startApp() {
+  $("login").classList.add("hidden");
+  $("app").classList.remove("hidden");
+  try { await loadData(); showPage("home"); }
+  catch (e) { message("Sisitemu ntiyashoboye gusoma amakuru: " + e.message, true); }
+}
+$("loginForm").addEventListener("submit", async e => {
+  e.preventDefault(); clearMessage();
+  const form = new FormData(e.currentTarget);
+  try {
+    const result = await api("/api/login", {
+      method:"POST",
+      body:JSON.stringify({
+        username:form.get("username"),
+        password:form.get("password")
+      })
+    });
+    currentUser = result.user || result;
+    if (!currentUser || !currentUser.role) {
+      const me = await api("/api/me");
+      currentUser = me.user || me;
+    }
+    await startApp();
+  } catch (err) { message(err.message, true); }
+});
+$("logout").addEventListener("click", async () => {
+  try { await api("/api/logout",{method:"POST",body:"{}"}); } catch {}
+  currentUser = null;
+  $("app").classList.add("hidden");
+  $("login").classList.remove("hidden");
+  message("Wasohotse muri sisitemu.");
+});
+$("refresh").addEventListener("click", async () => {
+  try { await loadData(); message("Amakuru avuguruwe."); }
+  catch(e) { message(e.message,true); }
+});
+$("productForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const f = new FormData(e.currentTarget);
+  try {
+    await api("/api/products",{method:"POST",body:JSON.stringify({
+      name:f.get("name"),sku:f.get("sku"),price:Number(f.get("price"))
+    })});
+    e.currentTarget.reset(); await loadData(); message("Igicuruzwa cyabitswe.");
+  } catch(err) { message(err.message,true); }
+});
+$("saleForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  try {
+    await api("/api/sale",{method:"POST",body:JSON.stringify({
+      productId:$("saleProduct").value,
+      product_id:$("saleProduct").value,
+      quantity:Number($("saleQty").value)
+    })});
+    await loadData(); message("Igurisha ryoherejwe neza.");
+  } catch(err) { message(err.message,true); }
+});
+$("transferForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  try {
+    await api("/api/transfer",{method:"POST",body:JSON.stringify({
+      productId:$("transferProduct").value,
+      product_id:$("transferProduct").value,
+      branchId:$("branchSelect").value,
+      branch_id:$("branchSelect").value,
+      quantity:Number($("transferQty").value)
+    })});
+    await loadData(); message("Kohereza stock byoherejwe neza.");
+  } catch(err) { message(err.message,true); }
+});
+$("userForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const f = new FormData(e.currentTarget);
+  try {
+    await api("/api/users",{method:"POST",body:JSON.stringify({
+      name:f.get("name"),username:f.get("username"),
+      password:f.get("password"),
+      branchId:f.get("branchId"),branch_id:f.get("branchId")
+    })});
+    e.currentTarget.reset(); await loadData(); message("Konti y'umukozi yakozwe.");
+  } catch(err) { message(err.message,true); }
+});
+$("loadHistory").addEventListener("click", async () => {
+  try { $("historyOutput").textContent = JSON.stringify(await api("/api/history"),null,2); }
+  catch(e) { message(e.message,true); }
+});
+$("loadReports").addEventListener("click", async () => {
+  try { $("reportsOutput").textContent = JSON.stringify(await api("/api/reports/sales"),null,2); }
+  catch(e) { message(e.message,true); }
+});
+(async function checkSession() {
+  try {
+    const result = await api("/api/me");
+    currentUser = result.user || result;
+    if (currentUser && currentUser.role) await startApp();
+  } catch {}
+})();
+</script>
+</body>
+</html>
