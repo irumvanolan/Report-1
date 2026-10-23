@@ -15,6 +15,7 @@ header p{margin:6px 0 0;font-size:14px}
 main{max-width:1100px;margin:22px auto;padding:0 14px}
 .panel{background:white;border:1px solid #e0e6ed;border-radius:12px;padding:18px;margin-bottom:16px}
 h2{font-size:19px;margin:0 0 14px}
+h3{font-size:16px;margin-top:22px}
 input,select,button{font:inherit;padding:11px;border:1px solid #cbd5e1;border-radius:7px;width:100%;margin:5px 0}
 button{background:#087f5b;color:white;border:0;font-weight:bold;cursor:pointer}
 button.secondary{background:#e8eef2;color:#172033}
@@ -108,7 +109,7 @@ footer{text-align:center;color:#64748b;padding:20px}
 
     <section id="transfer" class="view panel hidden">
       <h2>Ohereza stock ku ishami</h2>
-      <p class="muted">Iyi API ya server iriho yongerera stock ishami ryatoranyijwe. Ntikuramo stock mu bubiko bukuru.</p>
+      <p class="muted">Stock ikurwa mu bubiko bukuru ikongerwa ku ishami wahisemo.</p>
       <form id="transferForm">
         <label>Igicuruzwa</label>
         <select name="productId" id="transferProduct" required></select>
@@ -156,9 +157,36 @@ footer{text-align:center;color:#64748b;padding:20px}
     </section>
 
     <section id="users" class="view panel hidden">
-      <h2>Abakozi</h2>
-      <p class="muted">Gucunga abakozi bisaba kongera API za /api/users muri server.js. Iyi index ntihimba API zitariho.</p>
-      <div id="usersContent"></div>
+      <h2>Gucunga abakozi</h2>
+      <p class="muted">Konti nshya iba iy'umukozi w'ishami. Username igomba kugira inyuguti cyangwa imibare nibura 3; ijambo ry'ibanga nibura inyuguti 6.</p>
+
+      <form id="userForm">
+        <label>Izina ry'umukozi</label>
+        <input name="name" maxlength="100" required>
+
+        <label>Izina ryo kwinjira (username)</label>
+        <input name="username" minlength="3" maxlength="40"
+          pattern="[a-zA-Z0-9_.-]+" autocomplete="off" required>
+
+        <label>Ijambo ry'ibanga</label>
+        <input name="password" type="password" minlength="6"
+          autocomplete="new-password" required>
+
+        <label>Ishami akorera</label>
+        <select name="branchId" id="userBranch" required></select>
+
+        <button type="submit">Bika umukozi</button>
+      </form>
+
+      <h3>Abakozi bari muri system</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Izina</th><th>Username</th><th>Ishami</th><th>Imiterere</th></tr>
+          </thead>
+          <tbody id="usersTable"></tbody>
+        </table>
+      </div>
     </section>
   </section>
 </main>
@@ -173,282 +201,344 @@ let currentUser = null;
 let appData = {branches:[], products:[], sales:[]};
 
 function message(text, type="success") {
-  const el=$("message");
-  el.textContent=text;
-  el.className=type;
+  const el = $("message");
+  el.textContent = text;
+  el.className = type;
 }
 function hideMessage() {
-  $("message").className="hidden";
+  $("message").className = "hidden";
 }
-async function api(url, options={}) {
-  const response=await fetch(url,{
-    credentials:"same-origin",
+async function api(url, options = {}) {
+  const response = await fetch(url, {
+    credentials: "same-origin",
     ...options,
-    headers:{
+    headers: {
       ...(options.body ? {"Content-Type":"application/json"} : {}),
-      ...(options.headers||{})
+      ...(options.headers || {})
     }
   });
-  const data=await response.json().catch(()=>({}));
-  if(!response.ok) throw new Error(data.error||`Ikibazo cya server (${response.status})`);
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || `Ikibazo cya server (${response.status})`);
+  }
   return data;
 }
 function money(n) {
-  return (Number(n)||0).toLocaleString("rw-RW")+" RWF";
+  return (Number(n) || 0).toLocaleString("rw-RW") + " RWF";
 }
 function safe(value) {
   return String(value ?? "").replace(/[&<>"']/g, ch => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
   })[ch]);
 }
 function showView(id) {
-  document.querySelectorAll(".view").forEach(v=>v.classList.add("hidden"));
+  document.querySelectorAll(".view").forEach(v => v.classList.add("hidden"));
   $(id).classList.remove("hidden");
   hideMessage();
 }
 function setRoleUI(user) {
-  const isAdmin=user.role==="admin";
-  document.querySelectorAll(".admin-only").forEach(el=>{
-    el.classList.toggle("hidden",!isAdmin);
+  const isAdmin = user.role === "admin";
+  document.querySelectorAll(".admin-only").forEach(el => {
+    el.classList.toggle("hidden", !isAdmin);
   });
-  $("saleBranchWrap").classList.toggle("hidden",!isAdmin);
-  $("saleBranch").required=isAdmin;
+  $("saleBranchWrap").classList.toggle("hidden", !isAdmin);
+  $("saleBranch").required = isAdmin;
 }
 function uniqueProducts(products) {
-  const map=new Map();
-  products.forEach(p=>{
-    if(!map.has(String(p.id))) map.set(String(p.id),p);
+  const map = new Map();
+  products.forEach(p => {
+    if (!map.has(String(p.id))) map.set(String(p.id), p);
   });
   return [...map.values()];
 }
 function selectedBranchStock(productId, branchId) {
-  const p=appData.products.find(x =>
-    String(x.id)===String(productId) &&
-    String(x.branch_id)===String(branchId)
+  const p = appData.products.find(x =>
+    String(x.id) === String(productId) &&
+    String(x.branch_id) === String(branchId)
   );
-  return p ? Number(p.quantity||0) : 0;
+  return p ? Number(p.quantity || 0) : 0;
 }
+
 async function loadData() {
-  const data=await api("/api/data");
-  appData=data;
+  const data = await api("/api/data");
+  appData = data;
 
-  const products=data.products||[];
-  const branches=data.branches||[];
-  const sales=data.sales||[];
-  const distinctProducts=uniqueProducts(products);
+  const products = data.products || [];
+  const branches = data.branches || [];
+  const sales = data.sales || [];
+  const distinctProducts = uniqueProducts(products);
 
-  $("productCount").textContent=distinctProducts.length;
-  $("stockCount").textContent=products.reduce((sum,p)=>sum+Number(p.quantity||0),0);
-  $("salesTotal").textContent=money(sales.reduce((sum,s)=>sum+Number(s.total||0),0));
+  $("productCount").textContent = distinctProducts.length;
+  $("stockCount").textContent =
+    products.reduce((sum, p) => sum + Number(p.quantity || 0), 0);
+  $("salesTotal").textContent =
+    money(sales.reduce((sum, s) => sum + Number(s.total || 0), 0));
 
-  $("productsTable").innerHTML=products.map(p=>`
+  $("productsTable").innerHTML = products.map(p => `
     <tr>
       <td>${safe(p.name)}</td>
       <td>${money(p.selling_price)}</td>
-      <td>${safe(branches.find(b=>String(b.id)===String(p.branch_id))?.name||p.branch_id||"")}</td>
-      <td>${Number(p.quantity||0)}</td>
+      <td>${safe(branches.find(b => String(b.id) === String(p.branch_id))?.name || p.branch_id || "")}</td>
+      <td>${Number(p.quantity || 0)}</td>
     </tr>
   `).join("");
 
-  const productOptions=distinctProducts.map(p=>
+  const productOptions = distinctProducts.map(p =>
     `<option value="${safe(p.id)}">${safe(p.name)}</option>`
   ).join("");
-  $("transferProduct").innerHTML=productOptions;
-  $("saleProduct").innerHTML=productOptions;
+  $("transferProduct").innerHTML = productOptions;
+  $("saleProduct").innerHTML = productOptions;
 
-  const branchOptions=branches.map(b=>
+  const branchOptions = branches.map(b =>
     `<option value="${safe(b.id)}">${safe(b.name)}</option>`
   ).join("");
-  $("transferBranch").innerHTML=branchOptions;
-  $("saleBranch").innerHTML=branchOptions;
+  $("transferBranch").innerHTML = branchOptions;
+  $("saleBranch").innerHTML = branchOptions;
 
-  if(currentUser && currentUser.role!=="admin" && currentUser.branchId) {
-    $("saleBranch").value=String(currentUser.branchId);
+  if (currentUser && currentUser.role !== "admin" && currentUser.branchId) {
+    $("saleBranch").value = String(currentUser.branchId);
   }
 
-  const history=await api("/api/history").catch(()=>({history:[]}));
-  $("historyTable").innerHTML=(history.history||[]).map(h=>`
+  const history = await api("/api/history").catch(() => ({history:[]}));
+  $("historyTable").innerHTML = (history.history || []).map(h => `
     <tr>
-      <td>${h.created_at?safe(new Date(h.created_at).toLocaleString()):""}</td>
-      <td>${safe(h.product_name||"")}</td>
-      <td>${safe(h.branch_name||"")}</td>
-      <td>${safe(h.movement_type||"")}</td>
-      <td>${Number(h.quantity||0)}</td>
-      <td>${safe(h.employee_name||h.username||"")}</td>
+      <td>${h.created_at ? safe(new Date(h.created_at).toLocaleString()) : ""}</td>
+      <td>${safe(h.product_name || "")}</td>
+      <td>${safe(h.branch_name || "")}</td>
+      <td>${safe(h.movement_type || "")}</td>
+      <td>${Number(h.quantity || 0)}</td>
+      <td>${safe(h.employee_name || h.username || "")}</td>
     </tr>
   `).join("");
 
-  const reports=await api("/api/reports/sales").catch(()=>({reports:[]}));
-  $("reportsTable").innerHTML=(reports.reports||[]).map(r=>`
+  const reports = await api("/api/reports/sales").catch(() => ({reports:[]}));
+  $("reportsTable").innerHTML = (reports.reports || []).map(r => `
     <tr>
-      <td>${safe(r.branch_name||"")}</td>
-      <td>${safe(r.employee_name||r.username||"")}</td>
-      <td>${Number(r.sales_count||0)}</td>
+      <td>${safe(r.branch_name || "")}</td>
+      <td>${safe(r.employee_name || r.username || "")}</td>
+      <td>${Number(r.sales_count || 0)}</td>
       <td>${money(r.total_sales)}</td>
     </tr>
   `).join("");
 }
+
 function openApp(user) {
-  currentUser=user;
+  currentUser = user;
   $("login").classList.add("hidden");
   $("app").classList.remove("hidden");
-  $("userLabel").textContent=user.name||user.username;
-  $("roleLabel").textContent=user.role==="admin"?"Admin":"Umukozi w'ishami";
+  $("userLabel").textContent = user.name || user.username;
+  $("roleLabel").textContent = user.role === "admin" ? "Admin" : "Umukozi w'ishami";
   setRoleUI(user);
 }
+
 async function checkSession() {
   try {
-    const data=await api("/api/me");
-    if(data.user) {
+    const data = await api("/api/me");
+    if (data.user) {
       openApp(data.user);
       await loadData();
     }
-  } catch(e) {
-    message(e.message,"error");
+  } catch (e) {
+    message(e.message, "error");
   }
 }
 
-$("loginForm").addEventListener("submit",async e=>{
+$("loginForm").addEventListener("submit", async e => {
   e.preventDefault();
   hideMessage();
-  const form=new FormData(e.target);
+  const form = new FormData(e.target);
   try {
-    const data=await api("/api/login",{
-      method:"POST",
-      body:JSON.stringify({
-        username:form.get("username"),
-        password:form.get("password")
+    const data = await api("/api/login", {
+      method: "POST",
+      body: JSON.stringify({
+        username: form.get("username"),
+        password: form.get("password")
       })
     });
     openApp(data.user);
     await loadData();
     showView("dashboard");
     message("Winjiye neza.");
-  } catch(err) {
-    message(err.message,"error");
+  } catch (err) {
+    message(err.message, "error");
   }
 });
 
-$("logoutBtn").addEventListener("click",async()=>{
+$("logoutBtn").addEventListener("click", async () => {
   try {
-    await api("/api/logout",{method:"POST"});
-  } catch(e) {
-    message(e.message,"error");
+    await api("/api/logout", {method:"POST"});
+  } catch (e) {
+    message(e.message, "error");
     return;
   }
   location.reload();
 });
 
-$("refreshBtn").addEventListener("click",async()=>{
+$("refreshBtn").addEventListener("click", async () => {
   try {
     await loadData();
     message("Amakuru avuguruwe.");
-  } catch(e) {
-    message(e.message,"error");
+  } catch (e) {
+    message(e.message, "error");
   }
 });
 
-document.querySelectorAll("[data-view]").forEach(btn=>{
-  btn.addEventListener("click",()=>{
-    const id=btn.dataset.view;
-    if(btn.classList.contains("admin-only") && currentUser?.role!=="admin") {
-      message("Nta burenganzira ufite kuri iki gice.","error");
+document.querySelectorAll("[data-view]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const id = btn.dataset.view;
+    if (btn.classList.contains("admin-only") && currentUser?.role !== "admin") {
+      message("Nta burenganzira ufite kuri iki gice.", "error");
       return;
     }
     showView(id);
-    if(id==="users") {
-      $("usersContent").textContent=
-        "API yo gucunga abakozi ntirashyirwa muri server.js. Ntushobora kongeramo konti nshya kugeza iyo API yongeweho.";
-    }
+    if (id === "users") loadUsers();
   });
 });
 
-$("productForm").addEventListener("submit",async e=>{
-  e.preventDefault();
-  const f=new FormData(e.target);
+async function loadUsers() {
   try {
-    await api("/api/products",{
-      method:"POST",
-      body:JSON.stringify({
-        name:f.get("name"),
-        sellingPrice:Number(f.get("price")),
-        costPrice:Number(f.get("costPrice")||0)
+    const [usersData, branchesData] = await Promise.all([
+      api("/api/users"),
+      api("/api/branches")
+    ]);
+
+    const branches = (branchesData.branches || []).filter(b =>
+      b.active !== false && b.name !== "Ububiko Bukuru"
+    );
+
+    $("userBranch").innerHTML = branches.map(b =>
+      `<option value="${safe(b.id)}">${safe(b.name)}</option>`
+    ).join("");
+
+    $("usersTable").innerHTML = (usersData.users || []).map(u => `
+      <tr>
+        <td>${safe(u.name)}</td>
+        <td>${safe(u.username)}</td>
+        <td>${safe(u.branch_name || (u.role === "admin" ? "—" : "Nta shami"))}</td>
+        <td>${u.active === false ? "Yahagaritswe" : "Akora"}</td>
+      </tr>
+    `).join("") || '<tr><td colspan="4">Nta bakozi bahari.</td></tr>';
+
+  } catch (err) {
+    message(err.message, "error");
+  }
+}
+
+$("userForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const form = new FormData(e.target);
+
+  try {
+    await api("/api/users", {
+      method: "POST",
+      body: JSON.stringify({
+        name: String(form.get("name") || "").trim(),
+        username: String(form.get("username") || "").trim(),
+        password: String(form.get("password") || ""),
+        branchId: Number(form.get("branchId"))
       })
     });
+
+    e.target.reset();
+    await loadUsers();
+    message("Umukozi yongewemo neza. Ashobora kwinjira akoresheje username n'ijambo ry'ibanga washyizeho.");
+  } catch (err) {
+    message(err.message, "error");
+  }
+});
+
+$("productForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+
+  try {
+    await api("/api/products", {
+      method: "POST",
+      body: JSON.stringify({
+        name: f.get("name"),
+        sellingPrice: Number(f.get("price")),
+        costPrice: Number(f.get("costPrice") || 0)
+      })
+    });
+
     e.target.reset();
     await loadData();
     message("Igicuruzwa cyongewe.");
-  } catch(err) {
-    message(err.message,"error");
+  } catch (err) {
+    message(err.message, "error");
   }
 });
 
-$("transferForm").addEventListener("submit",async e=>{
+$("transferForm").addEventListener("submit", async e => {
   e.preventDefault();
-  const f=new FormData(e.target);
+  const f = new FormData(e.target);
+
   try {
-    await api("/api/transfer",{
-      method:"POST",
-      body:JSON.stringify({
-        productId:Number(f.get("productId")),
-        toBranch:Number(f.get("branchId")),
-        quantity:Number(f.get("quantity"))
+    await api("/api/transfer", {
+      method: "POST",
+      body: JSON.stringify({
+        productId: Number(f.get("productId")),
+        toBranch: Number(f.get("branchId")),
+        quantity: Number(f.get("quantity"))
       })
     });
+
     e.target.reset();
     await loadData();
     message("Stock yoherejwe ku ishami.");
-  } catch(err) {
-    message(err.message,"error");
+  } catch (err) {
+    message(err.message, "error");
   }
 });
 
-$("saleForm").addEventListener("submit",async e=>{
+$("saleForm").addEventListener("submit", async e => {
   e.preventDefault();
-  const f=new FormData(e.target);
-  const productId=Number(f.get("productId"));
-  const quantity=Number(f.get("quantity"));
-  const branchId=currentUser?.role==="admin"
+  const f = new FormData(e.target);
+  const productId = Number(f.get("productId"));
+  const quantity = Number(f.get("quantity"));
+  const branchId = currentUser?.role === "admin"
     ? Number(f.get("branchId"))
     : Number(currentUser?.branchId);
 
-  if(!productId || !Number.isInteger(quantity) || quantity<=0) {
-    message("Hitamo igicuruzwa n'umubare nyawo.","error");
+  if (!productId || !Number.isInteger(quantity) || quantity <= 0) {
+    message("Hitamo igicuruzwa n'umubare nyawo.", "error");
     return;
   }
-  if(!branchId) {
-    message("Konti yawe ntihujwe n'ishami. Saba admin kuguhuza n'ishami.","error");
+  if (!branchId) {
+    message("Konti yawe ntihujwe n'ishami. Saba admin kuguhuza n'ishami.", "error");
     return;
   }
 
-  const stock=selectedBranchStock(productId,branchId);
-  if(stock<quantity) {
-    const product=appData.products.find(p=>
-      String(p.id)===String(productId) &&
-      String(p.branch_id)===String(branchId)
+  const stock = selectedBranchStock(productId, branchId);
+  if (stock < quantity) {
+    const product = appData.products.find(p =>
+      String(p.id) === String(productId) &&
+      String(p.branch_id) === String(branchId)
     );
     message(
-      `Stock ntihagije kuri iryo shami. Ihari: ${product?Number(product.quantity):0}. Ushaka kugurisha: ${quantity}.`,
+      `Stock ntihagije kuri iryo shami. Ihari: ${product ? Number(product.quantity) : 0}. Ushaka kugurisha: ${quantity}.`,
       "error"
     );
     return;
   }
 
   try {
-    const result=await api("/api/sale",{
-      method:"POST",
-      body:JSON.stringify({productId,quantity,branchId})
+    const result = await api("/api/sale", {
+      method: "POST",
+      body: JSON.stringify({productId, quantity, branchId})
     });
+
     e.target.reset();
-    if(currentUser?.role==="admin") {
-      $("saleBranch").value=String(branchId);
+    if (currentUser?.role === "admin") {
+      $("saleBranch").value = String(branchId);
     } else {
-      $("saleBranch").value=String(currentUser.branchId);
+      $("saleBranch").value = String(currentUser.branchId);
     }
+
     await loadData();
     message(`Igurisha ryabitswe. Igiteranyo: ${money(result.total)}.`);
-  } catch(err) {
-    message(err.message,"error");
+  } catch (err) {
+    message(err.message, "error");
   }
 });
 
