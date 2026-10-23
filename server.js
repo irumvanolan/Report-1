@@ -349,19 +349,18 @@ app.post("/api/products", requireLogin, requireAdmin,
 app.post("/api/branch/stock-in", requireLogin,
   asyncRoute(async (req, res) => {
     const user = req.session.user;
-    const productId = Number(req.body.productId);
+    const productId = Number(req.body.productId ?? req.body.product_id);
     const quantity = Number(req.body.quantity);
     const branchId = user.role === "admin"
-      ? Number(req.body.branchId)
+      ? Number(req.body.branchId ?? req.body.branch_id)
       : Number(user.branchId);
     const details = String(
       req.body.details || "Stock yinjiye mu bubiko bw'ishami"
     ).slice(0, 250);
 
-    if (!Number.isInteger(productId) ||
-        !Number.isInteger(quantity) ||
-        quantity <= 0 ||
-        !Number.isInteger(branchId)) {
+    if (!Number.isInteger(productId) || productId <= 0 ||
+        !Number.isInteger(quantity) || quantity <= 0 ||
+        !Number.isInteger(branchId) || branchId <= 0) {
       return res.status(400).json({
         error: "Hitamo igicuruzwa n'umubare urenze zeru."
       });
@@ -400,7 +399,7 @@ app.post("/api/branch/stock-in", requireLogin,
 
       if (!product.rowCount) {
         throw Object.assign(
-          new Error("Igicuruzwa ntikiboneka."),
+          new Error(`Igicuruzwa gifite ID ${productId} ntikiboneka.`),
           { status: 400 }
         );
       }
@@ -435,15 +434,14 @@ app.post("/api/branch/stock-in", requireLogin,
 
 app.post("/api/warehouse/stock", requireLogin, requireAdmin,
   asyncRoute(async (req, res) => {
-    const productId = Number(req.body.productId);
+    const productId = Number(req.body.productId ?? req.body.product_id);
     const quantity = Number(req.body.quantity);
     const details = String(
       req.body.details || "Stock yinjiye mu bubiko bukuru"
     ).slice(0, 250);
 
-    if (!Number.isInteger(productId) ||
-        !Number.isInteger(quantity) ||
-        quantity <= 0) {
+    if (!Number.isInteger(productId) || productId <= 0 ||
+        !Number.isInteger(quantity) || quantity <= 0) {
       return res.status(400).json({
         error: "Amakuru ya stock si yo."
       });
@@ -461,7 +459,7 @@ app.post("/api/warehouse/stock", requireLogin, requireAdmin,
 
       if (!product.rowCount) {
         throw Object.assign(
-          new Error("Igicuruzwa ntikiboneka."),
+          new Error(`Igicuruzwa gifite ID ${productId} ntikiboneka.`),
           { status: 400 }
         );
       }
@@ -494,18 +492,32 @@ app.post("/api/warehouse/stock", requireLogin, requireAdmin,
   })
 );
 
+/*
+ * GUKOSORA KOHEREZA STOCK KU ISHAMI
+ * Yakira productId cyangwa product_id.
+ * Yakira toBranch, branchId cyangwa branch_id.
+ * Yongera stock ku ishami nubwo ritaragira stock row.
+ */
 app.post("/api/transfer", requireLogin, requireAdmin,
   asyncRoute(async (req, res) => {
-    const productId = Number(req.body.productId);
-    const toBranch = Number(req.body.toBranch);
+    const productId = Number(
+      req.body.productId ?? req.body.product_id
+    );
+
+    const toBranch = Number(
+      req.body.toBranch ??
+      req.body.branchId ??
+      req.body.branch_id ??
+      req.body.to_branch
+    );
+
     const quantity = Number(req.body.quantity);
 
-    if (!Number.isInteger(productId) ||
-        !Number.isInteger(toBranch) ||
-        !Number.isInteger(quantity) ||
-        quantity <= 0) {
+    if (!Number.isInteger(productId) || productId <= 0 ||
+        !Number.isInteger(toBranch) || toBranch <= 0 ||
+        !Number.isInteger(quantity) || quantity <= 0) {
       return res.status(400).json({
-        error: "Amakuru yo kohereza si yo."
+        error: "Hitamo igicuruzwa n'ishami, wandike umubare urenze zeru."
       });
     }
 
@@ -519,23 +531,37 @@ app.post("/api/transfer", requireLogin, requireAdmin,
         [productId]
       );
 
+      if (!product.rowCount) {
+        throw Object.assign(
+          new Error(`Igicuruzwa gifite ID ${productId} ntikiboneka muri database.`),
+          { status: 400 }
+        );
+      }
+
       const branch = await client.query(
         "SELECT id, name FROM branches WHERE id = $1",
         [toBranch]
       );
 
-      if (!product.rowCount ||
-          !branch.rowCount ||
-          branch.rows[0].name === "Ububiko Bukuru") {
+      if (!branch.rowCount) {
         throw Object.assign(
-          new Error("Igicuruzwa cyangwa ishami ryatoranyijwe ntibiboneka."),
+          new Error(`Ishami rifite ID ${toBranch} ntiriboneka muri database.`),
+          { status: 400 }
+        );
+      }
+
+      if (branch.rows[0].name === "Ububiko Bukuru") {
+        throw Object.assign(
+          new Error("Hitamo ishami, ntabwo ari Ububiko Bukuru."),
           { status: 400 }
         );
       }
 
       const warehouse = await client.query(
-        `SELECT quantity FROM warehouse_stock
-         WHERE product_id = $1 FOR UPDATE`,
+        `SELECT quantity
+         FROM warehouse_stock
+         WHERE product_id = $1
+         FOR UPDATE`,
         [productId]
       );
 
@@ -555,10 +581,11 @@ app.post("/api/transfer", requireLogin, requireAdmin,
       );
 
       await client.query(`
-        UPDATE stock
-        SET quantity = quantity + $1
-        WHERE branch_id = $2 AND product_id = $3
-      `, [quantity, toBranch, productId]);
+        INSERT INTO stock(branch_id, product_id, quantity)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (branch_id, product_id)
+        DO UPDATE SET quantity = stock.quantity + EXCLUDED.quantity
+      `, [toBranch, productId, quantity]);
 
       await client.query(`
         INSERT INTO transfers(product_id, to_branch, quantity, user_id)
@@ -568,14 +595,20 @@ app.post("/api/transfer", requireLogin, requireAdmin,
       await client.query(`
         INSERT INTO stock_movements
           (product_id, branch_id, movement_type, quantity, user_id, details)
-        VALUES ($1, $2, 'transfer_in', $3, $4, 'Stock yoherejwe n admin')
-      `, [productId, toBranch, quantity, req.session.user.id]);
+        VALUES ($1, $2, 'transfer_in', $3, $4, $5)
+      `, [
+        productId,
+        toBranch,
+        quantity,
+        req.session.user.id,
+        `Stock yoherejwe iva mu bubiko bukuru; umubare: ${quantity}`
+      ]);
 
       await client.query("COMMIT");
 
       res.json({
         ok: true,
-        message: "Stock yoherejwe ku ishami."
+        message: "Stock yoherejwe ku ishami neza."
       });
     } catch (err) {
       await client.query("ROLLBACK");
@@ -590,8 +623,8 @@ app.post("/api/sale", requireLogin,
   asyncRoute(async (req, res) => {
     const user = req.session.user;
     const branchId = user.role === "admin"
-      ? Number(req.body.branchId)
-      : user.branchId;
+      ? Number(req.body.branchId ?? req.body.branch_id)
+      : Number(user.branchId);
     const items = req.body.items;
 
     if (!Number.isInteger(branchId) ||
@@ -638,12 +671,11 @@ app.post("/api/sale", requireLogin,
       let total = 0;
 
       for (const item of items) {
-        const productId = Number(item.productId);
+        const productId = Number(item.productId ?? item.product_id);
         const quantity = Number(item.quantity);
 
-        if (!Number.isInteger(productId) ||
-            !Number.isInteger(quantity) ||
-            quantity <= 0) {
+        if (!Number.isInteger(productId) || productId <= 0 ||
+            !Number.isInteger(quantity) || quantity <= 0) {
           throw Object.assign(
             new Error("Umubare w'ibicuruzwa si wo."),
             { status: 400 }
@@ -657,7 +689,7 @@ app.post("/api/sale", requireLogin,
 
         if (!product.rowCount) {
           throw Object.assign(
-            new Error("Igicuruzwa ntikiboneka."),
+            new Error(`Igicuruzwa gifite ID ${productId} ntikiboneka.`),
             { status: 400 }
           );
         }
@@ -741,7 +773,7 @@ app.post("/api/users", requireLogin, requireAdmin,
     const username = String(req.body.username || "").trim();
     const name = String(req.body.name || "").trim();
     const password = String(req.body.password || "");
-    const branchId = Number(req.body.branchId);
+    const branchId = Number(req.body.branchId ?? req.body.branch_id);
 
     if (!/^[a-zA-Z0-9_.-]{3,40}$/.test(username) ||
         !name ||
