@@ -1,3 +1,4 @@
+
 "use strict";
 
 const express = require("express");
@@ -45,8 +46,8 @@ app.use(session({
   }
 }));
 
-const asyncRoute = fn =>
-  (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+const asyncRoute = fn => (req, res, next) =>
+  Promise.resolve(fn(req, res, next)).catch(next);
 
 const publicUser = u => ({
   id: u.id,
@@ -65,9 +66,7 @@ function requireLogin(req, res, next) {
 
 function requireAdmin(req, res, next) {
   if (req.session.user?.role !== "admin") {
-    return res.status(403).json({
-      error: "Admin gusa yemerewe iki gikorwa."
-    });
+    return res.status(403).json({ error: "Admin gusa yemerewe iki gikorwa." });
   }
   next();
 }
@@ -180,10 +179,69 @@ async function initDB() {
     ON CONFLICT (name) DO NOTHING
   `);
 
+  // Kuraho ibicuruzwa by'icyitegererezo gusa niba nta mateka bifite.
+  const placeholderPattern =
+    '^(igicuruzwa|product)[[:space:]]+(0?[1-9]|1[0-5])$';
+
+  await pool.query(`
+    DELETE FROM stock s USING products p
+    WHERE s.product_id = p.id
+      AND p.name ~* $1
+      AND NOT EXISTS (
+        SELECT 1 FROM sale_items si WHERE si.product_id = p.id
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM transfers t WHERE t.product_id = p.id
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM warehouse_movements wm WHERE wm.product_id = p.id
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM stock_movements sm WHERE sm.product_id = p.id
+      )
+  `, [placeholderPattern]);
+
+  await pool.query(`
+    DELETE FROM warehouse_stock w USING products p
+    WHERE w.product_id = p.id
+      AND p.name ~* $1
+      AND NOT EXISTS (
+        SELECT 1 FROM sale_items si WHERE si.product_id = p.id
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM transfers t WHERE t.product_id = p.id
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM warehouse_movements wm WHERE wm.product_id = p.id
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM stock_movements sm WHERE sm.product_id = p.id
+      )
+  `, [placeholderPattern]);
+
+  await pool.query(`
+    DELETE FROM products p
+    WHERE p.name ~* $1
+      AND NOT EXISTS (
+        SELECT 1 FROM sale_items si WHERE si.product_id = p.id
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM transfers t WHERE t.product_id = p.id
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM warehouse_movements wm WHERE wm.product_id = p.id
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM stock_movements sm WHERE sm.product_id = p.id
+      )
+  `, [placeholderPattern]);
+
+  // Stock y'amashami itandukanye n'ububiko bukuru.
   await pool.query(`
     INSERT INTO stock(branch_id, product_id, quantity)
     SELECT b.id, p.id, 0
     FROM branches b CROSS JOIN products p
+    WHERE LOWER(b.name) <> LOWER('Ububiko Bukuru')
     ON CONFLICT DO NOTHING
   `);
 
@@ -201,11 +259,13 @@ async function initDB() {
 
   if (existing.rowCount === 0) {
     const hash = await bcrypt.hash(process.env.ADMIN_PASSWORD, 12);
+
     await pool.query(
       `INSERT INTO users(username, password_hash, name, role)
        VALUES ($1, $2, 'Admin', 'admin')`,
       [username, hash]
     );
+
     console.log("Konti ya admin yakozwe.");
   }
 
@@ -225,6 +285,7 @@ app.post("/api/login", asyncRoute(async (req, res) => {
     "SELECT * FROM users WHERE username = $1 AND active = TRUE",
     [username]
   );
+
   const user = result.rows[0];
 
   if (!user || !(await bcrypt.compare(password, user.password_hash))) {
@@ -239,10 +300,12 @@ app.post("/api/login", asyncRoute(async (req, res) => {
     }
 
     req.session.user = publicUser(user);
+
     req.session.save(saveErr => {
       if (saveErr) {
         return res.status(500).json({ error: "Session ntiyabitswe." });
       }
+
       res.json({ user: req.session.user });
     });
   });
@@ -255,6 +318,7 @@ app.get("/api/me", (req, res) => {
 app.post("/api/logout", requireLogin, (req, res, next) => {
   req.session.destroy(err => {
     if (err) return next(err);
+
     res.clearCookie("report1.sid");
     res.json({ ok: true });
   });
@@ -263,9 +327,13 @@ app.post("/api/logout", requireLogin, (req, res, next) => {
 app.get("/api/data", requireLogin, asyncRoute(async (req, res) => {
   const user = req.session.user;
 
-  const branches = await pool.query(
-    "SELECT id, name, active FROM branches ORDER BY id"
-  );
+  const branches = await pool.query(`
+    SELECT id, name, active
+    FROM branches
+    WHERE active = TRUE
+      AND LOWER(name) <> LOWER('Ububiko Bukuru')
+    ORDER BY id
+  `);
 
   const products = await pool.query(`
     SELECT p.id, p.name, p.selling_price,
@@ -273,7 +341,10 @@ app.get("/api/data", requireLogin, asyncRoute(async (req, res) => {
            s.branch_id, s.quantity
     FROM products p
     JOIN stock s ON s.product_id = p.id
-    ${user.role === "admin" ? "" : "WHERE s.branch_id = $1"}
+    JOIN branches br ON br.id = s.branch_id
+    WHERE LOWER(br.name) <> LOWER('Ububiko Bukuru')
+      AND br.active = TRUE
+      ${user.role === "admin" ? "" : "AND s.branch_id = $1"}
     ORDER BY p.id, s.branch_id
   `, user.role === "admin" ? [] : [user.branchId]);
 
@@ -290,6 +361,7 @@ app.get("/api/data", requireLogin, asyncRoute(async (req, res) => {
   `, user.role === "admin" ? [] : [user.branchId]);
 
   let warehouseStock = [];
+
   if (user.role === "admin") {
     const result = await pool.query(`
       SELECT p.id AS product_id, p.name, w.quantity
@@ -297,6 +369,7 @@ app.get("/api/data", requireLogin, asyncRoute(async (req, res) => {
       JOIN products p ON p.id = w.product_id
       ORDER BY p.name
     `);
+
     warehouseStock = result.rows;
   }
 
@@ -312,13 +385,22 @@ app.get("/api/data", requireLogin, asyncRoute(async (req, res) => {
 }));
 
 app.get("/api/branches", requireLogin, asyncRoute(async (req, res) => {
-  const u = req.session.user;
-  const result = u.role === "admin"
-    ? await pool.query("SELECT id, name, active FROM branches ORDER BY id")
-    : await pool.query(
-        "SELECT id, name, active FROM branches WHERE id = $1",
-        [u.branchId]
-      );
+  const user = req.session.user;
+
+  const result = user.role === "admin"
+    ? await pool.query(`
+        SELECT id, name, active
+        FROM branches
+        WHERE active = TRUE
+          AND LOWER(name) <> LOWER('Ububiko Bukuru')
+        ORDER BY id
+      `)
+    : await pool.query(`
+        SELECT id, name, active
+        FROM branches
+        WHERE id = $1
+          AND LOWER(name) <> LOWER('Ububiko Bukuru')
+      `, [user.branchId]);
 
   res.json({ branches: result.rows });
 }));
@@ -335,6 +417,7 @@ app.post("/api/branches", requireLogin, requireAdmin,
     }
 
     const client = await pool.connect();
+
     try {
       await client.query("BEGIN");
 
@@ -352,6 +435,7 @@ app.post("/api/branches", requireLogin, requireAdmin,
       `, [id]);
 
       await client.query("COMMIT");
+
       res.status(201).json({ branch: created.rows[0] });
     } catch (err) {
       await client.query("ROLLBACK");
@@ -362,21 +446,72 @@ app.post("/api/branches", requireLogin, requireAdmin,
   })
 );
 
+app.patch("/api/branches/:id", requireLogin, requireAdmin,
+  asyncRoute(async (req, res) => {
+    const id = Number(req.params.id);
+    const name = req.body.name === undefined
+      ? null
+      : String(req.body.name).trim();
+    const active = req.body.active === undefined
+      ? null
+      : Boolean(req.body.active);
+
+    if (!Number.isInteger(id) ||
+        (name !== null && (!name || name.length > 100))) {
+      return res.status(400).json({
+        error: "Amakuru y'ishami si yo."
+      });
+    }
+
+    const old = await pool.query(
+      "SELECT id,name FROM branches WHERE id=$1",
+      [id]
+    );
+
+    if (!old.rowCount) {
+      return res.status(404).json({ error: "Ishami ntiriboneka." });
+    }
+
+    if (old.rows[0].name === "Ububiko Bukuru") {
+      return res.status(400).json({
+        error: "Ububiko Bukuru ntibuhindurwa nk'ishami."
+      });
+    }
+
+    if (name !== null && name.toLowerCase() === "ububiko bukuru") {
+      return res.status(400).json({
+        error: "Iri zina ryagenewe ububiko bukuru."
+      });
+    }
+
+    const result = await pool.query(`
+      UPDATE branches
+      SET name = COALESCE($1, name),
+          active = COALESCE($2, active)
+      WHERE id = $3
+      RETURNING id, name, active
+    `, [name, active, id]);
+
+    res.json({ branch: result.rows[0] });
+  })
+);
+
 app.post("/api/products", requireLogin, requireAdmin,
   asyncRoute(async (req, res) => {
     const name = String(req.body.name || "").trim();
-    const sellingPrice = Number(req.body.sellingPrice ?? req.body.selling_price);
-    const costPrice = Number(req.body.costPrice ?? req.body.cost_price ?? 0);
+    const sellingPrice = Number(req.body.sellingPrice);
+    const costPrice = Number(req.body.costPrice ?? 0);
 
     if (!name || name.length > 150 ||
         !Number.isFinite(sellingPrice) || sellingPrice < 0 ||
         !Number.isFinite(costPrice) || costPrice < 0) {
       return res.status(400).json({
-        error: "Reba izina n'ibiciro by'igicuruzwa."
+        error: "Amakuru y'igicuruzwa si yo."
       });
     }
 
     const client = await pool.connect();
+
     try {
       await client.query("BEGIN");
 
@@ -388,7 +523,9 @@ app.post("/api/products", requireLogin, requireAdmin,
 
       await client.query(`
         INSERT INTO stock(branch_id, product_id, quantity)
-        SELECT id, $1, 0 FROM branches
+        SELECT id, $1, 0
+        FROM branches
+        WHERE LOWER(name) <> LOWER('Ububiko Bukuru')
         ON CONFLICT DO NOTHING
       `, [result.rows[0].id]);
 
@@ -399,6 +536,7 @@ app.post("/api/products", requireLogin, requireAdmin,
       `, [result.rows[0].id]);
 
       await client.query("COMMIT");
+
       res.status(201).json({ product: result.rows[0] });
     } catch (err) {
       await client.query("ROLLBACK");
@@ -409,99 +547,11 @@ app.post("/api/products", requireLogin, requireAdmin,
   })
 );
 
-app.post("/api/branch/stock-in", requireLogin,
-  asyncRoute(async (req, res) => {
-    const user = req.session.user;
-    const productId = Number(req.body.productId ?? req.body.product_id);
-    const quantity = Number(req.body.quantity);
-    const branchId = user.role === "admin"
-      ? Number(req.body.branchId ?? req.body.branch_id)
-      : Number(user.branchId);
-    const details = String(
-      req.body.details || "Stock yinjiye mu bubiko bw'ishami"
-    ).slice(0, 250);
-
-    if (!Number.isInteger(productId) ||
-        !Number.isInteger(quantity) || quantity <= 0 ||
-        !Number.isInteger(branchId) || branchId <= 0) {
-      return res.status(400).json({
-        error: "Hitamo igicuruzwa, ishami n'umubare urenze zeru."
-      });
-    }
-
-    const client = await pool.connect();
-    try {
-      await client.query("BEGIN");
-
-      const branch = await client.query(
-        "SELECT id, name, active FROM branches WHERE id = $1",
-        [branchId]
-      );
-
-      if (!branch.rowCount) {
-        throw Object.assign(
-          new Error(`Ishami wahisemo (ID ${branchId}) ntiriboneka. Vugurura urutonde rw'amashami.`),
-          { status: 400 }
-        );
-      }
-
-      if (!branch.rows[0].active) {
-        throw Object.assign(
-          new Error("Iri shami ryahagaritswe; hitamo ishami rikora."),
-          { status: 400 }
-        );
-      }
-
-      if (String(branch.rows[0].name).trim().toLowerCase() === "ububiko bukuru") {
-        throw Object.assign(
-          new Error("Iyi form ikoreshwa ku mashami gusa. Stock y'ububiko bukuru yongerwa ahandi."),
-          { status: 400 }
-        );
-      }
-
-      if (user.role !== "admin" &&
-          branchId !== Number(user.branchId)) {
-        throw Object.assign(
-          new Error("Ushobora kwinjiza stock mu ishami ryawe gusa."),
-          { status: 403 }
-        );
-      }
-
-      const product = await client.query(
-        "SELECT id FROM products WHERE id = $1",
-        [productId]
-      );
-
-      if (!product.rowCount) {
-        throw Object.assign(
-          new Error("Igicuruzwa ntikiboneka."),
-          { status: 400 }
-        );
-      }
-
-      await client.query(`
-        INSERT INTO stock(branch_id, product_id, quantity)
-        VALUES ($1, $2, $3)
-        ON CONFLICT (branch_id, product_id)
-        DO UPDATE SET quantity = stock.quantity + EXCLUDED.quantity
-      `, [branchId, productId, quantity]);
-
-      await client.query(`
-        INSERT INTO stock_movements
-          (product_id, branch_id, movement_type, quantity, user_id, details)
-        VALUES ($1, $2, 'stock_in', $3, $4, $5)
-      `, [productId, branchId, quantity, user.id, details]);
-
-      await client.query("COMMIT");
-      res.json({ ok: true, message: "Stock yongewe kuri stock y'ishami." });
-    } catch (err) {
-      await client.query("ROLLBACK");
-      throw err;
-    } finally {
-      client.release();
-    }
-  })
-);
+app.post("/api/branch/stock-in", requireLogin, (req, res) => {
+  return res.status(403).json({
+    error: "Stock y'ishami igomba kuva mu bubiko bukuru binyuze kuri Kohereza ku mashami."
+  });
+});
 
 app.post("/api/warehouse/stock", requireLogin, requireAdmin,
   asyncRoute(async (req, res) => {
@@ -513,10 +563,13 @@ app.post("/api/warehouse/stock", requireLogin, requireAdmin,
 
     if (!Number.isInteger(productId) ||
         !Number.isInteger(quantity) || quantity <= 0) {
-      return res.status(400).json({ error: "Amakuru ya stock si yo." });
+      return res.status(400).json({
+        error: "Amakuru ya stock si yo."
+      });
     }
 
     const client = await pool.connect();
+
     try {
       await client.query("BEGIN");
 
@@ -536,7 +589,8 @@ app.post("/api/warehouse/stock", requireLogin, requireAdmin,
         INSERT INTO warehouse_stock(product_id, quantity)
         VALUES ($1, $2)
         ON CONFLICT (product_id)
-        DO UPDATE SET quantity = warehouse_stock.quantity + EXCLUDED.quantity
+        DO UPDATE SET quantity =
+          warehouse_stock.quantity + EXCLUDED.quantity
       `, [productId, quantity]);
 
       await client.query(`
@@ -545,7 +599,11 @@ app.post("/api/warehouse/stock", requireLogin, requireAdmin,
       `, [productId, quantity, req.session.user.id, details]);
 
       await client.query("COMMIT");
-      res.json({ ok: true, message: "Stock yongewe mu bubiko bukuru." });
+
+      res.json({
+        ok: true,
+        message: "Stock yongewe mu bubiko bukuru."
+      });
     } catch (err) {
       await client.query("ROLLBACK");
       throw err;
@@ -559,8 +617,10 @@ app.post("/api/transfer", requireLogin, requireAdmin,
   asyncRoute(async (req, res) => {
     const productId = Number(req.body.productId ?? req.body.product_id);
     const toBranch = Number(
-      req.body.toBranch ?? req.body.branchId ??
-      req.body.branch_id ?? req.body.to_branch
+      req.body.toBranch ??
+      req.body.branchId ??
+      req.body.branch_id ??
+      req.body.to_branch
     );
     const quantity = Number(req.body.quantity);
 
@@ -573,6 +633,7 @@ app.post("/api/transfer", requireLogin, requireAdmin,
     }
 
     const client = await pool.connect();
+
     try {
       await client.query("BEGIN");
 
@@ -582,7 +643,9 @@ app.post("/api/transfer", requireLogin, requireAdmin,
       );
 
       const branch = await client.query(
-        "SELECT id, name, active FROM branches WHERE id = $1 AND active = TRUE",
+        `SELECT id, name, active
+         FROM branches
+         WHERE id = $1 AND active = TRUE`,
         [toBranch]
       );
 
@@ -600,7 +663,7 @@ app.post("/api/transfer", requireLogin, requireAdmin,
         );
       }
 
-      if (String(branch.rows[0].name).trim().toLowerCase() === "ububiko bukuru") {
+      if (branch.rows[0].name === "Ububiko Bukuru") {
         throw Object.assign(
           new Error("Hitamo ishami, ntabwo ari Ububiko Bukuru."),
           { status: 400 }
@@ -608,7 +671,10 @@ app.post("/api/transfer", requireLogin, requireAdmin,
       }
 
       const warehouse = await client.query(
-        "SELECT quantity FROM warehouse_stock WHERE product_id = $1 FOR UPDATE",
+        `SELECT quantity
+         FROM warehouse_stock
+         WHERE product_id = $1
+         FOR UPDATE`,
         [productId]
       );
 
@@ -621,7 +687,9 @@ app.post("/api/transfer", requireLogin, requireAdmin,
       }
 
       await client.query(
-        "UPDATE warehouse_stock SET quantity = quantity - $1 WHERE product_id = $2",
+        `UPDATE warehouse_stock
+         SET quantity = quantity - $1
+         WHERE product_id = $2`,
         [quantity, productId]
       );
 
@@ -644,7 +712,11 @@ app.post("/api/transfer", requireLogin, requireAdmin,
       `, [productId, toBranch, quantity, req.session.user.id]);
 
       await client.query("COMMIT");
-      res.json({ ok: true, message: "Stock yoherejwe ku ishami." });
+
+      res.json({
+        ok: true,
+        message: "Stock yoherejwe ku ishami."
+      });
     } catch (err) {
       await client.query("ROLLBACK");
       throw err;
@@ -662,21 +734,28 @@ app.post("/api/sale", requireLogin, asyncRoute(async (req, res) => {
   const items = req.body.items;
 
   if (!Number.isInteger(branchId) ||
-      !Array.isArray(items) || items.length === 0 || items.length > 100) {
-    return res.status(400).json({ error: "Amakuru y'igurisha si yo." });
+      !Array.isArray(items) ||
+      items.length === 0 ||
+      items.length > 100) {
+    return res.status(400).json({
+      error: "Amakuru y'igurisha si yo."
+    });
   }
 
   const client = await pool.connect();
+
   try {
     await client.query("BEGIN");
 
     const branch = await client.query(
-      "SELECT id, name, active FROM branches WHERE id = $1 AND active = TRUE",
+      `SELECT id, name, active
+       FROM branches
+       WHERE id = $1 AND active = TRUE`,
       [branchId]
     );
 
     if (!branch.rowCount ||
-        String(branch.rows[0].name).trim().toLowerCase() === "ububiko bukuru") {
+        branch.rows[0].name === "Ububiko Bukuru") {
       throw Object.assign(
         new Error("Hitamo ishami ryemewe; ntushobora kugurisha mu bubiko bukuru."),
         { status: 400 }
@@ -693,7 +772,8 @@ app.post("/api/sale", requireLogin, asyncRoute(async (req, res) => {
 
     const sale = await client.query(
       `INSERT INTO sales(branch_id, user_id, total)
-       VALUES ($1, $2, 0) RETURNING id`,
+       VALUES ($1, $2, 0)
+       RETURNING id`,
       [branchId, user.id]
     );
 
@@ -704,7 +784,8 @@ app.post("/api/sale", requireLogin, asyncRoute(async (req, res) => {
       const quantity = Number(item.quantity);
 
       if (!Number.isInteger(productId) ||
-          !Number.isInteger(quantity) || quantity <= 0) {
+          !Number.isInteger(quantity) ||
+          quantity <= 0) {
         throw Object.assign(
           new Error("Umubare w'ibicuruzwa si wo."),
           { status: 400 }
@@ -724,13 +805,19 @@ app.post("/api/sale", requireLogin, asyncRoute(async (req, res) => {
       }
 
       const updated = await client.query(`
-        UPDATE stock SET quantity = quantity - $1
-        WHERE branch_id = $2 AND product_id = $3 AND quantity >= $1
+        UPDATE stock
+        SET quantity = quantity - $1
+        WHERE branch_id = $2
+          AND product_id = $3
+          AND quantity >= $1
         RETURNING quantity
       `, [quantity, branchId, productId]);
 
       if (!updated.rowCount) {
-        throw Object.assign(new Error("Stock ntihagije."), { status: 400 });
+        throw Object.assign(
+          new Error("Stock ntihagije."),
+          { status: 400 }
+        );
       }
 
       const price = Number(product.rows[0].selling_price);
@@ -747,8 +834,13 @@ app.post("/api/sale", requireLogin, asyncRoute(async (req, res) => {
         INSERT INTO stock_movements
           (product_id, branch_id, movement_type, quantity, user_id, details)
         VALUES ($1, $2, 'sale', $3, $4, $5)
-      `, [productId, branchId, -quantity, user.id,
-          `Igurisha #${sale.rows[0].id}`]);
+      `, [
+        productId,
+        branchId,
+        -quantity,
+        user.id,
+        `Igurisha #${sale.rows[0].id}`
+      ]);
     }
 
     await client.query(
@@ -757,6 +849,7 @@ app.post("/api/sale", requireLogin, asyncRoute(async (req, res) => {
     );
 
     await client.query("COMMIT");
+
     res.status(201).json({
       ok: true,
       saleId: sale.rows[0].id,
@@ -773,12 +866,13 @@ app.post("/api/sale", requireLogin, asyncRoute(async (req, res) => {
 app.get("/api/users", requireLogin, requireAdmin,
   asyncRoute(async (req, res) => {
     const result = await pool.query(`
-      SELECT u.id, u.username, u.name, u.role, u.branch_id,
-             u.active, b.name AS branch_name
+      SELECT u.id, u.username, u.name, u.role,
+             u.branch_id, u.active, b.name AS branch_name
       FROM users u
       LEFT JOIN branches b ON b.id = u.branch_id
       ORDER BY u.created_at DESC, u.id DESC
     `);
+
     res.json({ users: result.rows });
   })
 );
@@ -791,7 +885,9 @@ app.post("/api/users", requireLogin, requireAdmin,
     const branchId = Number(req.body.branchId ?? req.body.branch_id);
 
     if (!/^[a-zA-Z0-9_.-]{3,40}$/.test(username) ||
-        !name || name.length > 100 || password.length < 6 ||
+        !name ||
+        name.length > 100 ||
+        password.length < 6 ||
         !Number.isInteger(branchId)) {
       return res.status(400).json({
         error: "Reba izina, ishami n'ijambo ry'ibanga (inyuguti 6 nibura)."
@@ -799,75 +895,126 @@ app.post("/api/users", requireLogin, requireAdmin,
     }
 
     const branch = await pool.query(
-      "SELECT id FROM branches WHERE id = $1 AND active = TRUE",
+      `SELECT id
+       FROM branches
+       WHERE id = $1
+         AND active = TRUE
+         AND LOWER(name) <> LOWER('Ububiko Bukuru')`,
       [branchId]
     );
 
     if (!branch.rowCount) {
-      return res.status(400).json({ error: "Ishami ntiriboneka." });
+      return res.status(400).json({
+        error: "Ishami ntiriboneka cyangwa wahisemo ububiko bukuru."
+      });
     }
 
     const hash = await bcrypt.hash(password, 12);
+
     const result = await pool.query(`
       INSERT INTO users(username, password_hash, name, role, branch_id)
       VALUES ($1, $2, $3, 'branch', $4)
       RETURNING id, username, name, role, branch_id
     `, [username, hash, name, branchId]);
 
-    res.status(201).json({ user: publicUser(result.rows[0]) });
+    res.status(201).json({
+      user: publicUser(result.rows[0])
+    });
   })
 );
 
-app.get("/api/reports/sales", requireLogin, asyncRoute(async (req, res) => {
-  const user = req.session.user;
-  const result = await pool.query(`
-    SELECT b.name AS branch_name, u.username,
-           u.name AS employee_name, COUNT(s.id)::int AS sales_count,
-           COALESCE(SUM(s.total), 0) AS total_sales
-    FROM branches b
-    LEFT JOIN sales s ON s.branch_id = b.id
-    LEFT JOIN users u ON u.id = s.user_id
-    ${user.role === "admin" ? "" : "WHERE b.id = $1"}
-    GROUP BY b.id, b.name, u.id, u.username, u.name
-    ORDER BY b.id
-  `, user.role === "admin" ? [] : [user.branchId]);
+app.get("/api/reports/sales", requireLogin,
+  asyncRoute(async (req, res) => {
+    const user = req.session.user;
+    const params = [];
+    let branchFilter = "";
 
-  res.json({ reports: result.rows });
-}));
+    if (user.role !== "admin") {
+      params.push(user.branchId);
+      branchFilter = "AND s.branch_id = $1";
+    }
 
-app.get("/api/history", requireLogin, asyncRoute(async (req, res) => {
-  const user = req.session.user;
-  const result = await pool.query(`
-    SELECT m.id, p.name AS product_name, b.name AS branch_name,
-           m.movement_type, m.quantity, u.username,
-           u.name AS employee_name, m.details, m.created_at
-    FROM stock_movements m
-    JOIN products p ON p.id = m.product_id
-    JOIN branches b ON b.id = m.branch_id
-    JOIN users u ON u.id = m.user_id
-    ${user.role === "admin" ? "" : "WHERE m.branch_id = $1"}
-    ORDER BY m.created_at DESC
-    LIMIT 200
-  `, user.role === "admin" ? [] : [user.branchId]);
+    // Raporo igaragaza buri gicuruzwa cyagurishijwe, umubare,
+    // igiciro n'itariki. Index iriho igaragaza izina ry'ishami n'igicuruzwa.
+    const result = await pool.query(`
+      SELECT
+        s.id AS sale_id,
+        s.created_at,
+        s.branch_id,
+        b.name AS actual_branch_name,
+        (b.name || ' — ' || p.name) AS branch_name,
+        p.id AS product_id,
+        p.name AS product_name,
+        si.quantity,
+        si.unit_price,
+        si.line_total AS total,
+        s.total AS sale_total,
+        u.username,
+        u.name AS employee_name
+      FROM sales s
+      JOIN branches b ON b.id = s.branch_id
+      JOIN users u ON u.id = s.user_id
+      JOIN sale_items si ON si.sale_id = s.id
+      JOIN products p ON p.id = si.product_id
+      WHERE LOWER(b.name) <> LOWER('Ububiko Bukuru')
+        ${branchFilter}
+      ORDER BY s.created_at DESC, s.id DESC, si.id ASC
+      LIMIT 2000
+    `, params);
 
-  res.json({ history: result.rows });
-}));
+    res.json({ reports: result.rows });
+  })
+);
+
+app.get("/api/history", requireLogin,
+  asyncRoute(async (req, res) => {
+    const user = req.session.user;
+
+    const result = await pool.query(`
+      SELECT m.id,
+             p.name AS product_name,
+             b.name AS branch_name,
+             m.movement_type,
+             m.quantity,
+             u.username,
+             u.name AS employee_name,
+             m.details,
+             m.created_at
+      FROM stock_movements m
+      JOIN products p ON p.id = m.product_id
+      JOIN branches b ON b.id = m.branch_id
+      JOIN users u ON u.id = m.user_id
+      ${user.role === "admin" ? "" : "WHERE m.branch_id = $1"}
+      ORDER BY m.created_at DESC
+      LIMIT 200
+    `, user.role === "admin" ? [] : [user.branchId]);
+
+    res.json({ history: result.rows });
+  })
+);
 
 app.get("/api/warehouse/history", requireLogin, requireAdmin,
   asyncRoute(async (req, res) => {
     const result = await pool.query(`
-      SELECT m.id, p.name AS product_name, m.quantity, u.username,
-             u.name AS employee_name, m.details, m.created_at
+      SELECT m.id,
+             p.name AS product_name,
+             m.quantity,
+             u.username,
+             u.name AS employee_name,
+             m.details,
+             m.created_at
       FROM warehouse_movements m
       JOIN products p ON p.id = m.product_id
       JOIN users u ON u.id = m.user_id
       ORDER BY m.created_at DESC
       LIMIT 200
     `);
+
     res.json({ history: result.rows });
   })
 );
 
+// Frontend ibikwa muri root ya project.
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
@@ -878,14 +1025,17 @@ app.use((req, res) => {
   if (req.path.startsWith("/api/")) {
     return res.status(404).json({ error: "API ntiboneka." });
   }
+
   res.status(404).send("Report 1: index.html ntirashyirwamo.");
 });
 
 app.use((err, req, res, next) => {
   console.error("Ikosa:", err);
+
   if (res.headersSent) return next(err);
 
   const status = err.status || (err.code === "23505" ? 409 : 500);
+
   res.status(status).json({
     error: status === 500
       ? "Ikibazo cya server. Reba logs za Render."
@@ -895,6 +1045,7 @@ app.use((err, req, res, next) => {
 
 async function start() {
   await initDB();
+
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Report 1 yatangiye kuri port ${PORT}`);
   });
