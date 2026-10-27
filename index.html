@@ -1,661 +1,357 @@
-<!DOCTYPE html>
+
+<!doctype html>
 <html lang="rw">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Report 1 | Sisitemu y'Amashami</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Report 1</title>
 <style>
-:root {
-  --primary:#155eef;
-  --primary-dark:#1246b8;
-  --bg:#f4f7fb;
-  --card:#ffffff;
-  --text:#172033;
-  --muted:#667085;
-  --line:#e4eaf2;
-  --green:#159b62;
-  --red:#d92d20;
-  --orange:#dc6803;
-  --shadow:0 8px 28px rgba(16,24,40,.07);
-}
+:root{--bg:#f3f6fa;--ink:#182230;--muted:#64748b;--green:#087f5b;--line:#e2e8f0;--white:#fff;--red:#c2410c}
 *{box-sizing:border-box}
-body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
-button,input,select,textarea{font:inherit}
-button{cursor:pointer;border:0;border-radius:10px;padding:11px 15px;font-weight:700;transition:.2s}
-button:hover{filter:brightness(.96)}
-input,select,textarea{width:100%;padding:12px;border:1px solid #d0d5dd;border-radius:10px;background:#fff;outline:none}
-input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px #155eef1a}
-label{display:block;font-size:13px;font-weight:700;margin-bottom:7px}
-.form-group{margin-bottom:15px}
-.primary{background:var(--primary);color:white}
-.secondary{background:#eaf1ff;color:var(--primary)}
-.success{background:#e8f7ef;color:#087443}
-.danger{background:#fff0ef;color:var(--red)}
-.muted{color:var(--muted)}
-.small{font-size:12px}
+body{margin:0;font:15px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--ink)}
+button,input,select{font:inherit}
+button{border:0;border-radius:10px;padding:11px 14px;background:var(--green);color:#fff;cursor:pointer;font-weight:650}
+button.secondary{background:#e2e8f0;color:#182230}
+button.danger{background:#b42318}
 .hidden{display:none!important}
-#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(circle at top right,#c7d7fe,transparent 35%),linear-gradient(135deg,#edf3ff,#f8fafc)}
-.login-card{width:100%;max-width:430px;background:white;border-radius:22px;padding:32px;box-shadow:0 24px 70px #1d29391c}
-.brand-mark{width:54px;height:54px;display:grid;place-items:center;border-radius:16px;background:linear-gradient(135deg,#155eef,#528bff);color:white;font-size:26px;font-weight:900}
-.login-card h1{margin:18px 0 5px;font-size:27px}
-.login-card p{color:var(--muted);line-height:1.6}
-#app{min-height:100vh}
-.topbar{height:72px;position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 26px;gap:16px}
-.brand{display:flex;align-items:center;gap:12px;font-size:19px;font-weight:900}
-.brand .brand-mark{width:40px;height:40px;border-radius:12px;font-size:20px}
-.top-actions{display:flex;align-items:center;gap:10px}
-.user-chip{padding:9px 12px;background:#f2f4f7;border-radius:10px;font-size:13px;font-weight:700}
-.layout{display:grid;grid-template-columns:245px minmax(0,1fr);min-height:calc(100vh - 72px)}
-.sidebar{background:white;border-right:1px solid var(--line);padding:20px 14px}
-.nav-label{font-size:11px;color:#98a2b3;font-weight:900;letter-spacing:1px;padding:12px}
-.nav-btn{width:100%;display:flex;align-items:center;gap:12px;text-align:left;background:transparent;color:#475467;margin-bottom:5px;padding:12px 13px}
-.nav-btn .nav-icon{width:22px;text-align:center;font-size:17px}
-.nav-btn.active{background:#edf3ff;color:var(--primary)}
-.main{padding:28px;min-width:0}
-.page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:24px}
-.page-head h1{margin:0 0 7px;font-size:27px}
-.page-head p{margin:0;color:var(--muted);font-size:14px}
-.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:24px}
-.stat-card,.panel{background:white;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
-.stat-card{padding:20px}
-.stat-top{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:13px;font-weight:700}
-.stat-icon{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:#edf3ff;font-size:21px}
-.stat-value{font-size:28px;font-weight:900;margin:16px 0 5px;overflow-wrap:anywhere}
-.stat-note{font-size:12px;color:var(--muted)}
-.content-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(280px,1fr);gap:18px;margin-bottom:20px}
-.panel{padding:21px;margin-bottom:20px;min-width:0}
-.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
-.panel-head h2{font-size:17px;margin:0}
-.panel-head p{font-size:12px;color:var(--muted);margin:5px 0 0}
-.grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
-.grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
-.form-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
-.table-wrap{width:100%;overflow-x:auto}
-table{width:100%;border-collapse:collapse;min-width:650px}
-th,td{text-align:left;padding:13px 12px;border-bottom:1px solid #eef1f5;font-size:13px;vertical-align:middle}
-th{background:#f9fafb;color:#667085;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
-tbody tr:hover{background:#fafcff}
-.badge{display:inline-flex;align-items:center;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:800;background:#f2f4f7;color:#475467}
-.badge.green{background:#e8f7ef;color:#087443}
-.badge.blue{background:#eaf1ff;color:#1849a9}
-.badge.orange{background:#fff4e5;color:#b54708}
-.badge.red{background:#fff0ef;color:#b42318}
-.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
-.toolbar input{max-width:320px}
-.toolbar select{max-width:220px}
-.empty{text-align:center;padding:30px;color:var(--muted);font-size:14px}
-.notice{padding:13px 15px;border-radius:11px;background:#eff8ff;color:#175cd3;font-size:13px;line-height:1.6;margin-bottom:17px}
-.notice.warning{background:#fffaeb;color:#b54708}
-.notice.error{background:#fff0ef;color:#b42318}
-.notice.success-note{background:#ecfdf3;color:#027a48}
-.quick-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.quick-actions button{padding:15px;text-align:left;display:flex;gap:10px;align-items:center;background:#f8faff;color:#344054;border:1px solid var(--line)}
-.quick-actions button span{font-size:20px}
-.progress{height:8px;background:#edf0f5;border-radius:99px;overflow:hidden;margin-top:10px}
-.progress span{display:block;height:100%;background:var(--primary);border-radius:99px}
-.product-line{display:grid;grid-template-columns:minmax(0,1.5fr) 90px 110px 36px;gap:9px;align-items:center;margin-bottom:10px}
-.product-line button{padding:10px}
-.toast{position:fixed;bottom:22px;right:22px;z-index:100;background:#172033;color:white;padding:14px 18px;border-radius:12px;box-shadow:var(--shadow);max-width:calc(100vw - 44px);font-size:14px}
-.loading{padding:40px;text-align:center;color:var(--muted)}
-.footer-note{text-align:center;color:#98a2b3;font-size:12px;padding:18px}
-@media(max-width:1100px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.content-grid{grid-template-columns:1fr}.layout{grid-template-columns:210px minmax(0,1fr)}.main{padding:20px}}
+.wrap{max-width:1200px;margin:auto;padding:18px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.brand{font-size:24px;font-weight:850;letter-spacing:-.7px}
+.brand span{color:var(--green)}
+.user{color:var(--muted);font-size:13px}
+.layout{display:grid;grid-template-columns:220px 1fr;gap:18px}
+.nav,.panel,.stat{background:white;border:1px solid var(--line);border-radius:16px}
+.nav{padding:10px;height:max-content}
+.nav button{display:block;width:100%;text-align:left;background:transparent;color:#334155;margin:3px 0}
+.nav button.active,.nav button:hover{background:#e6f5ef;color:#075e45}
+.panel{padding:18px;min-width:0}
+.panel h2{margin:0 0 14px;font-size:20px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.stat{padding:15px}
+.stat small{color:var(--muted)}
+.stat strong{display:block;font-size:23px;margin-top:5px;overflow-wrap:anywhere}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.field label{font-size:13px;font-weight:700;color:#475569}
+.field input,.field select{width:100%;border:1px solid #cbd5e1;border-radius:9px;padding:11px;background:#fff;color:var(--ink)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row>*{flex:1}
+.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:10px}
+table{width:100%;border-collapse:collapse;min-width:600px;background:#fff}
+th,td{padding:11px 12px;text-align:left;border-bottom:1px solid var(--line);font-size:13px}
+th{background:#f8fafc;color:#475569}
+tr:last-child td{border-bottom:0}
+.pill{display:inline-block;background:#e6f5ef;color:#076449;border-radius:30px;padding:4px 8px;font-size:12px}
+.muted{color:var(--muted)}
+.notice{padding:11px 13px;border-radius:10px;background:#eff6ff;color:#1d4ed8;margin-bottom:12px}
+.error{background:#fff1f2;color:#9f1239}
+.success{background:#ecfdf5;color:#065f46}
+.login{max-width:410px;margin:8vh auto;padding:25px;background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:0 15px 40px #0f172a0d}
+.login .brand{margin-bottom:8px}
+.small{font-size:12px}
+.receipt{border:1px dashed #94a3b8;padding:12px;margin-top:12px;max-width:420px}
+.receipt h3{text-align:center;margin:0 0 8px}
+.receipt .receipt-line{display:flex;justify-content:space-between;gap:8px;margin:5px 0}
+.empty{padding:25px;text-align:center;color:var(--muted)}
+.print-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:15px}
+.print-actions button{flex:0 0 auto}
+.customer-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:14px;margin:12px 0 18px}
+.customer-box h3{margin:0 0 12px}
 @media(max-width:760px){
- .topbar{height:62px;padding:0 13px}.brand{font-size:16px}.brand .brand-mark{width:36px;height:36px}.user-chip{display:none}
- .layout{display:block}.sidebar{position:sticky;top:62px;z-index:9;border-right:0;border-bottom:1px solid var(--line);padding:8px;overflow-x:auto;display:flex;gap:5px}
- .nav-label{display:none}.nav-btn{width:auto;min-width:max-content;margin:0;padding:10px;font-size:12px;gap:7px}.nav-btn .nav-icon{font-size:15px}
- .main{padding:16px 12px}.page-head h1{font-size:23px}.page-head{margin-bottom:18px}
- .cards{gap:10px}.stat-card{padding:14px}.stat-value{font-size:22px}.stat-top{font-size:11px}.stat-icon{width:34px;height:34px}
- .panel{padding:15px;border-radius:13px}.grid-2,.grid-3{grid-template-columns:1fr}.product-line{grid-template-columns:minmax(0,1fr) 65px 85px 34px;gap:5px}
- .product-line input,.product-line select{padding:10px 7px;font-size:12px}.quick-actions{grid-template-columns:1fr 1fr}
+.layout{grid-template-columns:1fr}
+.nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.nav button{font-size:13px;padding:9px}
+.stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+.grid2{grid-template-columns:1fr}
+.wrap{padding:10px}
+.panel{padding:13px}
+.top{align-items:flex-start}
+.brand{font-size:21px}
 }
 @media print{
- body{background:white}
- .topbar,.sidebar,.no-print,#loginScreen,#app>.topbar{display:none!important}
- .layout{display:block}.main{padding:0}.panel{box-shadow:none;border:0;padding:0}
- .print-area{display:block!important}
- table{min-width:0}th,td{font-size:10px;padding:6px}
+body{background:#fff!important;color:#000!important;font-size:12px!important}
+#loginView,.top,.nav,#msg,.print-actions,button,form,.notice,.no-print{display:none!important}
+#appView,.layout,.panel,#content{display:block!important;margin:0!important;padding:0!important;border:0!important;max-width:none!important;width:100%!important;background:#fff!important;box-shadow:none!important}
+.tablewrap{overflow:visible!important;border:0!important}
+table{width:100%!important;min-width:0!important;border-collapse:collapse!important}
+th,td{padding:6px!important;font-size:10px!important;color:#000!important;border:1px solid #bbb!important;overflow-wrap:anywhere}
+th{background:#eee!important}
+h2,h3{color:#000!important}
+body.print-report .receipt{display:none!important}
+body.print-receipt #content>*:not(#receipt){display:none!important}
+body.print-receipt #receipt{display:block!important;width:72mm!important;max-width:72mm!important;margin:0!important;padding:0!important}
+body.print-receipt .receipt{display:block!important;width:72mm!important;max-width:72mm!important;margin:0!important;padding:2mm!important;border:0!important;font-family:Arial,sans-serif!important;font-size:11px!important;line-height:1.35!important;color:#000!important}
+body.print-receipt .receipt h3{font-size:15px!important;text-align:center!important}
+body.print-receipt .receipt button{display:none!important}
+body.print-receipt .receipt .receipt-line{display:flex!important;justify-content:space-between!important;gap:4px!important}
+body.print-receipt .receipt .product-name{font-weight:700!important;margin-top:7px!important}
+body.print-receipt .receipt .product-detail{font-size:10px!important}
+body.print-receipt.print-a4 #content>*:not(#receipt){display:none!important}
+body.print-receipt.print-a4 #receipt{width:100%!important;max-width:none!important}
+body.print-receipt.print-a4 .receipt{width:100%!important;max-width:none!important;padding:12mm!important;font-size:13px!important;border:0!important}
+body.print-receipt.print-a4 .receipt h3{font-size:22px!important}
+body.print-receipt.print-a4 .receipt .product-detail{font-size:12px!important}
+body.print-receipt.print-a4 .receipt .receipt-line{margin:8px 0!important}
+@page{margin:8mm}
+body.print-receipt.print-thermal{@page{size:80mm auto;margin:3mm}}
+body.print-receipt.print-a4{@page{size:A4 portrait;margin:12mm}}
 }
 </style>
 </head>
 <body>
 
-<section id="loginScreen">
-  <div class="login-card">
-    <div class="brand-mark">R</div>
-    <h1>Report 1</h1>
-    <p>Sisitemu icunga ububiko, amashami, ibicuruzwa n'igurisha ahantu hamwe.</p>
-    <form id="loginForm">
-      <div class="form-group">
-        <label for="username">Izina ryo kwinjira</label>
-        <input id="username" name="username" autocomplete="username" placeholder="Andika izina ryawe" required>
-      </div>
-      <div class="form-group">
-        <label for="password">Ijambo ry'ibanga</label>
-        <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Andika ijambo ry'ibanga" required>
-      </div>
-      <button class="primary" type="submit" style="width:100%;padding:14px">Injira muri sisitemu →</button>
-      <p id="loginMessage" class="small" role="status"></p>
-    </form>
-    <div class="footer-note">Report 1 · Sisitemu y'ubucuruzi</div>
-  </div>
-</section>
-
-<div id="app" class="hidden">
-  <header class="topbar">
-    <div class="brand"><div class="brand-mark">R</div><span>Report 1</span></div>
-    <div class="top-actions">
-      <span id="userChip" class="user-chip">Umukoresha</span>
-      <button class="secondary" id="refreshBtn" title="Kuvugurura">↻</button>
-      <button class="danger" id="logoutBtn">Sohoka</button>
-    </div>
-  </header>
-  <div class="layout">
-    <aside class="sidebar">
-      <div class="nav-label">MENU NKURU</div>
-      <button class="nav-btn active" data-page="dashboard"><span class="nav-icon">▦</span> Incamake</button>
-      <button class="nav-btn" data-page="products"><span class="nav-icon">▣</span> Ibicuruzwa</button>
-      <button class="nav-btn" data-page="warehouse"><span class="nav-icon">▤</span> Ububiko bukuru</button>
-      <button class="nav-btn" data-page="transfers"><span class="nav-icon">⇄</span> Kohereza stock</button>
-      <button class="nav-btn" data-page="sales"><span class="nav-icon">🛒</span> Gurisha</button>
-      <button class="nav-btn" data-page="history"><span class="nav-icon">◷</span> Amateka y'igurisha</button>
-      <button class="nav-btn" data-page="movements"><span class="nav-icon">↕</span> Amateka ya stock</button>
-      <button class="nav-btn" data-page="reports"><span class="nav-icon">▥</span> Raporo</button>
-      <button class="nav-btn" data-page="users"><span class="nav-icon">♙</span> Abakozi</button>
-    </aside>
-    <main id="mainContent" class="main"><div class="loading">Birimo gufunguka...</div></main>
-  </div>
+<div id="loginView" class="login">
+  <div class="brand">Report <span>1</span></div>
+  <p class="muted">Sisitemu y'ububiko n'amashami.</p>
+  <div id="loginMsg"></div>
+  <form id="loginForm">
+    <div class="field"><label>Izina ryo kwinjira</label><input name="username" autocomplete="username" required></div>
+    <div class="field"><label>Ijambo ry'ibanga</label><input name="password" type="password" autocomplete="current-password" required></div>
+    <button style="width:100%">Injira</button>
+  </form>
 </div>
 
-<div id="toast" class="toast hidden" role="status"></div>
+<div id="appView" class="wrap hidden">
+<header class="top">
+  <div><div class="brand">Report <span>1</span></div><div id="roleLine" class="user"></div></div>
+  <div class="row" style="flex:0 0 auto"><button class="secondary" id="refreshBtn">Vugurura</button><button class="danger" id="logoutBtn">Sohoka</button></div>
+</header>
+<div class="layout">
+<nav class="nav" id="nav"></nav>
+<main class="panel"><div id="msg"></div><div id="content"></div></main>
+</div>
+</div>
 
 <script>
-"use strict";
+const $=s=>document.querySelector(s);
+const state={user:null,data:null,view:"home",receipt:null};
+const fmt=n=>new Intl.NumberFormat("rw-RW",{maximumFractionDigits:0}).format(Number(n||0))+" RWF";
+const qty=n=>new Intl.NumberFormat("rw-RW",{maximumFractionDigits:0}).format(Number(n||0));
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function notify(t,err=false){$("#msg").innerHTML=t?`<div class="notice ${err?"error":"success"}">${esc(t)}</div>`:""}
+async function api(url,opts={}){const r=await fetch(url,{...opts,headers:{"Content-Type":"application/json",...(opts.headers||{})}});let d={};try{d=await r.json()}catch{}if(!r.ok)throw Error(d.error||"Habaye ikibazo.");return d}
+const isAdmin=()=>state.user?.role==="admin";
 
-const $ = id => document.getElementById(id);
-const money = value => new Intl.NumberFormat("rw-RW",{maximumFractionDigits:2}).format(Number(value)||0) + " RWF";
-const dateText = value => {
-  if(!value) return "—";
-  const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleString("rw-RW");
-};
-const escapeHTML = value => String(value ?? "").replace(/[&<>"']/g, c => ({
-  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-}[c]));
-let currentUser = null;
-let appData = {};
-let currentPage = "dashboard";
-let productsCache = [];
-let branchesCache = [];
-let saleLines = [];
-let toastTimer;
-
-function toast(message, isError=false){
-  const el=$("toast");
-  el.textContent=message;
-  el.style.background=isError?"#b42318":"#172033";
-  el.classList.remove("hidden");
-  clearTimeout(toastTimer);
-  toastTimer=setTimeout(()=>el.classList.add("hidden"),3500);
+function products(){
+ const m=new Map();
+ for(const p of (state.data?.products||[])){
+  if(!m.has(Number(p.id)))m.set(Number(p.id),{id:Number(p.id),name:p.name,price:Number(p.selling_price),cost:Number(p.cost_price||0),branchStocks:{}});
+  m.get(Number(p.id)).branchStocks[p.branch_id]=Number(p.quantity||0);
+ }
+ return [...m.values()];
 }
+function warehouseQty(id){return Number((state.data?.warehouseStock||[]).find(x=>Number(x.product_id)===Number(id))?.quantity||0)}
 
-async function api(url, options={}){
-  const config={credentials:"same-origin",...options,headers:{...(options.headers||{})}};
-  if(config.body && typeof config.body!=="string"){
-    config.headers["Content-Type"]="application/json";
-    config.body=JSON.stringify(config.body);
+async function load(){
+ state.data=await api("/api/data");
+ const [h,wh,r]=await Promise.all([
+  api("/api/history"),
+  isAdmin()?api("/api/warehouse/history"):Promise.resolve({history:[]}),
+  api("/api/reports/sales")
+ ]);
+ state.data.history=h.history||[];
+ state.data.warehouseHistory=wh.history||[];
+ state.data.reports=r.reports||[];
+ if(isAdmin()){try{state.data.users=(await api("/api/users")).users||[]}catch{state.data.users=[]}}
+ render();
+}
+async function boot(){
+ try{
+  const d=await api("/api/me");
+  if(d.user){
+   state.user=d.user;
+   $("#loginView").classList.add("hidden");
+   $("#appView").classList.remove("hidden");
+   await load();
   }
-  let response;
-  try{
-    response=await fetch(url,config);
-  }catch(e){
-    throw new Error("Internet cyangwa server ntiboneka. Ongera ugerageze.");
-  }
-  const text=await response.text();
-  let data={};
-  try{data=text?JSON.parse(text):{};}catch{data={message:text};}
-  if(!response.ok){
-    if(response.status===401){
-      showLogin("Igihe cyo gukoresha cyarangiye. Ongera winjire.");
-    }
-    throw new Error(data.error||data.message||("Ikibazo cya server ("+response.status+")."));
-  }
-  return data;
+ }catch{}
 }
 
-function showLogin(message=""){
-  $("app").classList.add("hidden");
-  $("loginScreen").classList.remove("hidden");
-  $("loginMessage").textContent=message;
-}
-function showApp(){
-  $("loginScreen").classList.add("hidden");
-  $("app").classList.remove("hidden");
-  $("userChip").textContent=(currentUser?.name||currentUser?.username||"Umukoresha")+" · "+(currentUser?.role||"");
-}
-
-$("loginForm").addEventListener("submit",async e=>{
-  e.preventDefault();
-  const button=e.submitter;
-  button.disabled=true;
-  $("loginMessage").textContent="Birimo kugenzura...";
-  try{
-    const result=await api("/api/login",{method:"POST",body:{
-      username:$("username").value.trim(),
-      password:$("password").value
-    }});
-    currentUser=result.user||result;
-    await loadApp();
-  }catch(err){
-    $("loginMessage").textContent=err.message;
-  }finally{button.disabled=false;}
+$("#loginForm").addEventListener("submit",async e=>{
+ e.preventDefault();$("#loginMsg").innerHTML="";
+ const f=new FormData(e.target);
+ try{
+  const d=await api("/api/login",{method:"POST",body:JSON.stringify({username:f.get("username"),password:f.get("password")})});
+  state.user=d.user;
+  $("#loginView").classList.add("hidden");
+  $("#appView").classList.remove("hidden");
+  await load();
+ }catch(err){$("#loginMsg").innerHTML=`<div class="notice error">${esc(err.message)}</div>`}
 });
+$("#logoutBtn").onclick=async()=>{try{await api("/api/logout",{method:"POST"})}finally{location.reload()}};
+$("#refreshBtn").onclick=async()=>{try{await load();notify("Amakuru yavuguruwe.")}catch(e){notify(e.message,true)}};
 
-$("logoutBtn").addEventListener("click",async()=>{
-  try{await api("/api/logout",{method:"POST",body:{}});}catch(e){}
-  currentUser=null;
-  showLogin();
-});
-$("refreshBtn").addEventListener("click",()=>loadApp().catch(e=>toast(e.message,true)));
+function printReport(){
+ document.body.classList.remove("print-receipt","print-a4","print-thermal");
+ document.body.classList.add("print-report");window.print();
+}
+function printReceipt(mode="thermal"){
+ if(!state.receipt){notify("Banza ukore igurisha.",true);return}
+ document.body.classList.remove("print-report","print-a4","print-thermal");
+ document.body.classList.add("print-receipt",mode==="a4"?"print-a4":"print-thermal");
+ window.print();
+}
+window.addEventListener("afterprint",()=>document.body.classList.remove("print-receipt","print-report","print-a4","print-thermal"));
 
-document.querySelectorAll(".nav-btn").forEach(btn=>{
-  btn.addEventListener("click",()=>{
-    currentPage=btn.dataset.page;
-    document.querySelectorAll(".nav-btn").forEach(b=>b.classList.toggle("active",b===btn));
-    renderPage();
-  });
-});
-
-function isAdmin(){
-  const role=String(currentUser?.role||"").toLowerCase();
-  return role==="admin"||role==="administrator"||role==="umuyobozi";
+function nav(){
+ let items=[["home","Incamake"],["stock","Ibicuruzwa / stock"],["branchStock","Injiza stock ku ishami"],["sale","Gurisha"],["sales","Amateka y'igurisha"],["movements","Amateka ya stock"],["reports","Raporo z'igurisha"]];
+ if(isAdmin())items.splice(2,0,["product","Ongeramo igicuruzwa"],["warehouse","Injiza stock mu bubiko"],["transfer","Ohereza ku ishami"],["users","Abakozi"]);
+ $("#nav").innerHTML=items.map(([id,t])=>`<button class="${state.view===id?"active":""}" data-view="${id}">${t}</button>`).join("");
+ $("#nav").querySelectorAll("button").forEach(b=>b.onclick=()=>{state.view=b.dataset.view;notify("");render()});
 }
-function val(obj,...keys){
-  for(const key of keys) if(obj && obj[key]!==undefined && obj[key]!==null) return obj[key];
-  return "";
-}
-function listFrom(data,...keys){
-  for(const key of keys) if(Array.isArray(data?.[key])) return data[key];
-  return [];
-}
-function productName(id){
-  const p=productsCache.find(x=>String(val(x,"id","productId"))===String(id));
-  return p?val(p,"name","productName","title"):"Igicuruzwa #"+id;
-}
-function branchName(id){
-  const b=branchesCache.find(x=>String(val(x,"id","branchId"))===String(id));
-  return b?val(b,"name","branchName"):"Ishami #"+id;
-}
+function stat(label,value){return `<div class="stat"><small>${label}</small><strong>${value}</strong></div>`}
 function table(headers,rows){
-  if(!rows.length) return '<div class="empty">Nta makuru arahari.</div>';
-  return '<div class="table-wrap"><table><thead><tr>'+headers.map(h=>'<th>'+escapeHTML(h)+'</th>').join("")+'</tr></thead><tbody>'+
-    rows.map(row=>'<tr>'+row.map(cell=>'<td>'+cell+'</td>').join("")+'</tr>').join("")+
-    '</tbody></table></div>';
+ return rows.length?`<div class="tablewrap"><table><thead><tr>${headers.map(x=>`<th>${x}</th>`).join("")}</tr></thead><tbody>${rows.join("")}</tbody></table></div>`:`<div class="empty">Nta makuru arahari.</div>`;
 }
-function panel(title,body,subtitle=""){
-  return '<section class="panel"><div class="panel-head"><div><h2>'+escapeHTML(title)+'</h2>'+(subtitle?'<p>'+escapeHTML(subtitle)+'</p>':"")+'</div></div>'+body+'</section>';
+function productTable(){
+ const ps=products(),branches=state.data.branches||[];
+ const headers=["Igicuruzwa",...(isAdmin()?["Stock mu bubiko bukuru"]:[]),...branches.filter(b=>b.name!=="Ububiko Bukuru").map(b=>esc(b.name)),"Igiciro cyo kugurisha",...(isAdmin()?["Igiciro cyo kugura"]:[])];
+ const rows=ps.map(p=>`<tr><td>${esc(p.name)}</td>${isAdmin()?`<td><b>${qty(warehouseQty(p.id))}</b></td>`:""}${branches.filter(b=>b.name!=="Ububiko Bukuru").map(b=>`<td>${qty(p.branchStocks[b.id]||0)}</td>`).join("")}<td>${fmt(p.price)}</td>${isAdmin()?`<td>${fmt(p.cost)}</td>`:""}</tr>`);
+ return table(headers,rows);
 }
-function stat(title,value,icon,note){
-  return '<div class="stat-card"><div class="stat-top"><span>'+escapeHTML(title)+'</span><span class="stat-icon">'+icon+'</span></div><div class="stat-value">'+value+'</div><div class="stat-note">'+escapeHTML(note||"Raporo ya sisitemu")+'</div></div>';
+function home(){
+ const ps=products();
+ const totalWarehouse=ps.reduce((s,p)=>s+warehouseQty(p.id),0);
+ const totalBranch=ps.reduce((s,p)=>s+Object.entries(p.branchStocks).filter(([id])=>state.data.branches.some(b=>String(b.id)===String(id)&&b.name!=="Ububiko Bukuru")).reduce((a,[,q])=>a+q,0),0);
+ const today=new Date().toLocaleDateString();
+ const todaySales=(state.data.sales||[]).filter(s=>new Date(s.created_at).toLocaleDateString()===today).reduce((a,s)=>a+Number(s.total||0),0);
+ return `<h2>Incamake</h2><div class="stats">${stat("Ibicuruzwa",qty(ps.length))}${stat("Stock mu bubiko bukuru",qty(totalWarehouse))}${stat("Stock mu mashami",qty(totalBranch))}${stat("Igurisha uyu munsi",fmt(todaySales))}</div><h2>Stock y'ibicuruzwa</h2>${productTable()}`;
 }
-function pageHead(title,description,action=""){
-  return '<div class="page-head"><div><h1>'+escapeHTML(title)+'</h1><p>'+escapeHTML(description)+'</p></div>'+action+'</div>';
+function stock(){return `<h2>Ibicuruzwa na stock</h2><div class="print-actions no-print"><button type="button" onclick="printReport()">Capisha raporo (A4)</button></div>${productTable()}`}
+function productForm(){
+ return `<h2>Ongeramo igicuruzwa gishya</h2><form id="productForm"><div class="grid2"><div class="field"><label>Izina ry'igicuruzwa</label><input name="name" maxlength="150" required></div><div class="field"><label>Igiciro cyo kugura (RWF)</label><input name="costPrice" type="number" min="0" step="1" value="0" required></div><div class="field"><label>Igiciro cyo kugurisha (RWF)</label><input name="sellingPrice" type="number" min="0" step="1" value="0" required></div><div class="field"><label>Stock ya mbere mu bubiko bukuru (niba ihari)</label><input name="quantity" type="number" min="0" step="1" value="0" required></div></div><button>Ongeramo igicuruzwa</button></form><p class="muted small">Igicuruzwa gishya kiboneka ku mashami yose; stock itangira kuri zeru keretse winjije umubare mu bubiko bukuru.</p>`;
 }
-function optionList(items,selected=""){
-  return items.map(item=>{
-    const id=val(item,"id","branchId","productId");
-    const name=val(item,"name","branchName","productName","title");
-    return '<option value="'+escapeHTML(id)+'" '+(String(id)===String(selected)?"selected":"")+'>'+escapeHTML(name)+'</option>';
-  }).join("");
+function branchStockForm(){
+ const branches=(state.data.branches||[]).filter(b=>b.name.trim().toLowerCase()!=="ububiko bukuru"&&b.active&&(isAdmin()||Number(b.id)===Number(state.user.branchId)));
+ return `<h2>Kongera stock ku ishami</h2><div class="notice">Kohereza stock iva mu bubiko bukuru ukoresha “Ohereza ku ishami”.</div><form id="branchStockForm"><div class="field"><label>Igicuruzwa</label><select name="productId" required>${products().map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("")}</select></div>${isAdmin()?`<div class="field"><label>Ishami</label><select name="branchId" required>${branches.map(b=>`<option value="${b.id}">${esc(b.name)}</option>`).join("")}</select></div>`:`<p class="muted">Ishami: ${esc(branches[0]?.name||"Ishami ryawe")}</p>`}<div class="field"><label>Umubare wongewe</label><input name="quantity" type="number" min="1" step="1" required></div><div class="field"><label>Ibisobanuro (si ngombwa)</label><input name="details" maxlength="250"></div><button ${branches.length?"":"disabled"}>Ongerera ishami stock</button></form>`;
 }
-
-async function loadApp(){
-  $("mainContent").innerHTML='<div class="loading">Birimo kuvugurura amakuru...</div>';
-  try{
-    const me=await api("/api/me");
-    currentUser=me.user||me;
-    if(!currentUser||currentUser===null||me.user===null){
-      showLogin();
-      return;
-    }
-    showApp();
-    const result=await api("/api/data");
-    appData=result.data||result.state?.data||result;
-    productsCache=listFrom(appData,"products","items");
-    branchesCache=listFrom(appData,"branches","stores");
-    renderPage();
-  }catch(err){
-    $("mainContent").innerHTML='<div class="notice error">'+escapeHTML(err.message)+'</div><button class="primary" onclick="loadApp()">Ongera ugerageze</button>';
-    if(!currentUser) showLogin(err.message);
-  }
+function warehouseForm(){
+ return `<h2>Kongera stock mu bubiko bukuru</h2><form id="warehouseForm"><div class="field"><label>Igicuruzwa</label><select name="productId" required>${products().map(p=>`<option value="${p.id}">${esc(p.name)} — stock ${qty(warehouseQty(p.id))}</option>`).join("")}</select></div><div class="field"><label>Umubare wongewe</label><input name="quantity" type="number" min="1" step="1" required></div><div class="field"><label>Ibisobanuro (si ngombwa)</label><input name="details" maxlength="250"></div><button>Injiza stock</button></form><h2>Amateka ya stock y'ububiko</h2>${table(["Itariki","Igicuruzwa","Umubare wongewe","Uwakoze","Ibisobanuro"],(state.data.warehouseHistory||[]).map(x=>`<tr><td>${new Date(x.created_at).toLocaleString()}</td><td>${esc(x.product_name)}</td><td>+${qty(x.quantity)}</td><td>${esc(x.username)}</td><td>${esc(x.details)}</td></tr>`))}`;
+}
+function transfer(){
+ const branches=(state.data.branches||[]).filter(b=>b.name!=="Ububiko Bukuru"&&b.active);
+ return `<h2>Kohereza stock ku ishami</h2><div class="notice">Stock iva mu bubiko bukuru ikajya ku ishami wahisemo. Sisitemu igenzura ko stock ihagije.</div><form id="transferForm"><div class="field"><label>Igicuruzwa</label><select name="productId" required>${products().map(p=>`<option value="${p.id}">${esc(p.name)} — mu bubiko: ${qty(warehouseQty(p.id))}</option>`).join("")}</select></div><div class="field"><label>Ishami ryakira</label><select name="toBranch" required>${branches.map(b=>`<option value="${b.id}">${esc(b.name)}</option>`).join("")}</select></div><div class="field"><label>Umubare woherezwa</label><input name="quantity" type="number" min="1" step="1" required></div><button>Ohereza stock</button></form><h2>Stock iri mu bubiko</h2>${table(["Igicuruzwa","Stock isigaye"],products().map(p=>`<tr><td>${esc(p.name)}</td><td>${qty(warehouseQty(p.id))}</td></tr>`))}`;
 }
 
-function renderPage(){
-  if(!currentUser)return;
-  $("userChip").textContent=(currentUser.name||currentUser.username||"Umukoresha")+" · "+(currentUser.role||"");
-  const pages={
-    dashboard:renderDashboard,
-    products:renderProducts,
-    warehouse:renderWarehouse,
-    transfers:renderTransfers,
-    sales:renderSales,
-    history:renderHistory,
-    movements:renderMovements,
-    reports:renderReports,
-    users:renderUsers
-  };
-  const fn=pages[currentPage]||renderDashboard;
-  if(!isAdmin() && ["warehouse","transfers","movements","users"].includes(currentPage)){
-    currentPage="dashboard";
-    document.querySelectorAll(".nav-btn").forEach(b=>b.classList.toggle("active",b.dataset.page===currentPage));
-    renderDashboard();
-    return;
-  }
-  fn();
+/* IGURISHA: amazina na telefoni by'umukiriya bigaragara hano */
+function sale(){
+ const branches=(state.data.branches||[]).filter(b=>b.name!=="Ububiko Bukuru"&&b.active);
+ return `<h2>Gurisha</h2>
+ ${isAdmin()?`<div class="field"><label>Ishami rigurisha</label><select id="saleBranch">${branches.map(b=>`<option value="${b.id}">${esc(b.name)}</option>`).join("")}</select></div>`:`<p class="muted">Ishami: ${esc((state.data.branches||[]).find(b=>Number(b.id)===Number(state.user.branchId))?.name||"Ishami ryawe")}</p>`}
+ <form id="saleForm">
+   <div class="customer-box">
+     <h3>👤 Umwirondoro w'umukiriya</h3>
+     <div class="field">
+       <label for="customerName">Amazina y'umukiriya *</label>
+       <input id="customerName" name="customerName" type="text" maxlength="150" placeholder="Andika amazina y'umukiriya" autocomplete="name" required>
+     </div>
+     <div class="field">
+       <label for="customerPhone">Telefoni y'umukiriya *</label>
+       <input id="customerPhone" name="customerPhone" type="tel" maxlength="40" placeholder="Andika nimero ya telefoni" autocomplete="tel" required>
+     </div>
+   </div>
+   <h3>🛒 Ibicuruzwa bigurishwa</h3>
+   <div id="saleLines"></div>
+   <div class="row">
+     <button type="button" class="secondary" id="addLine">+ Ongeraho igicuruzwa</button>
+     <button type="submit">Bika igurisha</button>
+   </div>
+ </form>
+ <div id="receipt"></div>`;
 }
-
-function renderDashboard(){
-  const products=listFrom(appData,"products","items");
-  const sales=listFrom(appData,"sales","saleHistory");
-  const branches=listFrom(appData,"branches","stores");
-  const warehouse=listFrom(appData,"warehouseStock","warehouse","mainStock");
-  const totalSales=sales.reduce((sum,s)=>sum+Number(val(s,"total","totalAmount","amount")||0),0);
-  const totalStock=warehouse.reduce((sum,x)=>sum+Number(val(x,"quantity","stock","qty")||0),0);
-  const recent=sales.slice(-6).reverse().map(s=>[
-    escapeHTML(val(s,"id","saleId")||"—"),
-    escapeHTML(val(s,"customerName","customer_name")||"Umukiriya"),
-    money(val(s,"total","totalAmount","amount")),
-    '<span class="badge green">Byakozwe</span>',
-    escapeHTML(dateText(val(s,"createdAt","created_at","date")))
-  ]);
-  $("mainContent").innerHTML=
-    pageHead("Incamake","Reba uko ubucuruzi n'amashami bihagaze.")+
-    '<div class="cards">'+
-    stat("Ibicuruzwa",products.length,"▣","Ibicuruzwa biri muri sisitemu")+
-    stat("Amashami",branches.length,"🏬","Amashami yanditswe")+
-    stat("Igurisha ryose",money(totalSales),"↗","Ukurikije amateka aboneka")+
-    stat("Stock y'ububiko",money(totalStock),"▤","Ibice biri mu bubiko bukuru")+
-    '</div>'+
-    '<div class="content-grid">'+
-    panel("Ibikorwa byihuse",'<div class="quick-actions">'+
-      '<button onclick="goPage(\'sales\')"><span>🛒</span><div><b>Gurisha</b><div class="small muted">Andika igurisha rishya</div></div></button>'+
-      (isAdmin()?'<button onclick="goPage(\'warehouse\')"><span>📦</span><div><b>Ongeramo stock</b><div class="small muted">Ububiko bukuru</div></div></button>':'')+
-      (isAdmin()?'<button onclick="goPage(\'transfers\')"><span>⇄</span><div><b>Kohereza stock</b><div class="small muted">Ohereza ku ishami</div></div></button>':'')+
-      '<button onclick="goPage(\'history\')"><span>◷</span><div><b>Amateka</b><div class="small muted">Reba ibyagurishijwe</div></div></button>'+
-    '</div>')+
-    panel("Amashami",branches.length?branches.map(b=>'<div style="padding:12px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px"><b>'+escapeHTML(val(b,"name","branchName"))+'</b><span class="badge blue">Ishami</span></div>').join(""):'<div class="empty">Nta mashami yagaragajwe.</div>')+
-    '</div>'+
-    panel("Ibyagurishijwe vuba",table(["Nimero","Umukiriya","Amafaranga","Imiterere","Itariki"],recent));
-}
-function goPage(page){
-  currentPage=page;
-  document.querySelectorAll(".nav-btn").forEach(b=>b.classList.toggle("active",b.dataset.page===page));
-  renderPage();
-}
-
-function renderProducts(){
-  const products=listFrom(appData,"products","items");
-  $("mainContent").innerHTML=pageHead("Ibicuruzwa","Reba ibicuruzwa biri muri sisitemu.")+
-    '<div class="panel"><div class="toolbar"><input id="productSearch" placeholder="Shakisha igicuruzwa..."><button class="secondary" onclick="loadApp()">↻ Kuvugurura</button></div><div id="productTable"></div></div>';
-  const draw=()=>{
-    const q=$("productSearch").value.toLowerCase();
-    const rows=products.filter(p=>String(val(p,"name","productName","title")).toLowerCase().includes(q)).map(p=>[
-      '<b>'+escapeHTML(val(p,"name","productName","title"))+'</b>',
-      escapeHTML(val(p,"sku","code")||"—"),
-      money(val(p,"price","sellingPrice","salePrice")),
-      escapeHTML(val(p,"unit","measurement")||"Igice"),
-      '<span class="badge blue">'+escapeHTML(val(p,"id")||"—")+'</span>'
-    ]);
-    $("productTable").innerHTML=table(["Igicuruzwa","Kode","Igiciro","Igipimo","ID"],rows);
-  };
-  $("productSearch").addEventListener("input",draw);draw();
-}
-
-function renderWarehouse(){
-  if(!isAdmin())return;
-  const stock=listFrom(appData,"warehouseStock","warehouse","mainStock");
-  const rows=stock.map(s=>[
-    escapeHTML(productName(val(s,"productId","product_id","id"))),
-    '<b>'+escapeHTML(val(s,"quantity","stock","qty")||0)+'</b>',
-    escapeHTML(val(s,"unit")||"Igice")
-  ]);
-  $("mainContent").innerHTML=pageHead("Ububiko bukuru","Admin ni we wongera stock mu bubiko.")+
-    '<div class="notice">Ongeramo stock hano. Kohereza ibicuruzwa ku mashami bikorwa muri menu ya Kohereza stock.</div>'+
-    '<div class="panel"><h2>Ongeramo stock</h2><form id="warehouseForm"><div class="grid-2">'+
-    '<div class="form-group"><label>Igicuruzwa</label><select id="warehouseProduct" required><option value="">Hitamo igicuruzwa</option>'+optionList(productsCache)+'</select></div>'+
-    '<div class="form-group"><label>Umubare</label><input id="warehouseQty" type="number" min="1" step="any" required placeholder="Andika umubare"></div>'+
-    '</div><div class="form-group"><label>Icyitonderwa (si ngombwa)</label><input id="warehouseNote" placeholder="Impamvu cyangwa ibisobanuro"></div>'+
-    '<button class="primary" type="submit">+ Ongeramo stock</button></form></div>'+
-    panel("Stock iri mu bubiko",table(["Igicuruzwa","Umubare","Igipimo"],rows));
-  $("warehouseForm").addEventListener("submit",async e=>{
-    e.preventDefault();
-    try{
-      await api("/api/warehouse/stock",{method:"POST",body:{
-        productId:$("warehouseProduct").value,
-        quantity:Number($("warehouseQty").value),
-        note:$("warehouseNote").value.trim()
-      }});
-      toast("Stock yongewemo.");
-      await loadApp();
-    }catch(err){toast(err.message,true);}
-  });
-}
-
-function renderTransfers(){
-  if(!isAdmin())return;
-  const stock=listFrom(appData,"warehouseStock","warehouse","mainStock");
-  const rows=listFrom(appData,"transfers","stockTransfers","movements").slice(-20).reverse().map(t=>[
-    escapeHTML(productName(val(t,"productId","product_id"))),
-    escapeHTML(branchName(val(t,"branchId","toBranchId","branch_id"))),
-    escapeHTML(val(t,"quantity","qty")||0),
-    escapeHTML(dateText(val(t,"createdAt","created_at","date")))
-  ]);
-  $("mainContent").innerHTML=pageHead("Kohereza stock","Admin yohereza ibicuruzwa mu mashami.")+
-    '<div class="notice warning">Amashami ntashobora kohereza stock hagati yayo. Kohereza bikorwa kuva mu bubiko bukuru gusa.</div>'+
-    '<div class="panel"><h2>Kohereza ibicuruzwa ku ishami</h2><form id="transferForm"><div class="grid-2">'+
-    '<div class="form-group"><label>Igicuruzwa</label><select id="transferProduct" required><option value="">Hitamo igicuruzwa</option>'+optionList(productsCache)+'</select></div>'+
-    '<div class="form-group"><label>Ishami ryakira</label><select id="transferBranch" required><option value="">Hitamo ishami</option>'+optionList(branchesCache)+'</select></div>'+
-    '<div class="form-group"><label>Umubare wo kohereza</label><input id="transferQty" type="number" min="1" step="any" required></div>'+
-    '<div class="form-group"><label>Icyitonderwa</label><input id="transferNote" placeholder="Si ngombwa"></div>'+
-    '</div><button class="primary" type="submit">⇄ Kohereza stock</button></form></div>'+
-    panel("Kohereza kwabaye",table(["Igicuruzwa","Ishami","Umubare","Itariki"],rows));
-  $("transferForm").addEventListener("submit",async e=>{
-    e.preventDefault();
-    try{
-      await api("/api/transfer",{method:"POST",body:{
-        productId:$("transferProduct").value,
-        branchId:$("transferBranch").value,
-        quantity:Number($("transferQty").value),
-        note:$("transferNote").value.trim()
-      }});
-      toast("Stock yoherejwe ku ishami.");
-      await loadApp();
-    }catch(err){toast(err.message,true);}
-  });
-}
-
-function renderSales(){
-  const branches=listFrom(appData,"branches","stores");
-  const myBranch=val(currentUser,"branchId","branch_id");
-  const branchOptions=isAdmin()?'<option value="">Hitamo ishami</option>'+optionList(branches):optionList(branches,myBranch);
-  $("mainContent").innerHTML=pageHead("Gurisha","Andika umukiriya n'ibicuruzwa aguze.")+
-    '<div class="panel"><form id="saleForm">'+
-    '<h2 style="margin-top:0">Amakuru y\'umukiriya</h2><div class="grid-2">'+
-    '<div class="form-group"><label for="customerName">Amazina y\'umukiriya *</label><input id="customerName" name="customerName" type="text" placeholder="Andika amazina y\'umukiriya" required></div>'+
-    '<div class="form-group"><label for="customerPhone">Telefoni y\'umukiriya *</label><input id="customerPhone" name="customerPhone" type="tel" placeholder="Andika nimero ya telefoni" required></div>'+
-    (isAdmin()?'<div class="form-group"><label>Ishami rigurisha *</label><select id="saleBranch" required>'+branchOptions+'</select></div>':'<input id="saleBranch" type="hidden" value="'+escapeHTML(myBranch)+'">')+
-    '</div><hr style="border:0;border-top:1px solid var(--line);margin:22px 0">'+
-    '<div class="panel-head"><div><h2>Ibicuruzwa bigurwa</h2><p>Hitamo ibicuruzwa n\'umubare wabyo.</p></div><button class="secondary" id="addSaleLine" type="button">+ Ongeraho</button></div>'+
-    '<div id="saleLines"></div><div style="display:flex;justify-content:space-between;align-items:center;padding:15px;background:#f8faff;border-radius:12px;margin:15px 0"><b>Igiteranyo</b><strong id="saleTotal" style="font-size:23px;color:var(--primary)">0 RWF</strong></div>'+
-    '<div class="form-actions"><button class="primary" type="submit">✓ Emeza igurisha</button><button class="secondary" type="reset">Siba amakuru</button></div></form></div>'+
-    '<div class="notice">Ibyo ugurisha bigomba kuba bifite stock ihagije ku ishami. Menya neza ko amazina na telefoni by\'umukiriya byanditswe neza.</div>';
-  saleLines=[];
-  addSaleLine();
-  $("addSaleLine").addEventListener("click",addSaleLine);
-  $("saleForm").addEventListener("reset",()=>setTimeout(()=>{saleLines=[];addSaleLine();},0));
-  $("saleForm").addEventListener("submit",submitSale);
-}
-
 function addSaleLine(){
-  const id=Date.now()+Math.floor(Math.random()*1000);
-  saleLines.push({id,productId:"",quantity:1,price:0});
-  drawSaleLines();
+ const branchId=state.user.role==="admin"?Number($("#saleBranch")?.value||state.data.branches.find(b=>b.name!=="Ububiko Bukuru")?.id):Number(state.user.branchId);
+ const available=products().filter(p=>Number(p.branchStocks[branchId]||0)>0);
+ if(!available.length){$("#saleLines").innerHTML='<div class="empty">Nta stock ihari kuri iri shami.</div>';return}
+ const d=document.createElement("div");d.className="grid2 sale-line";d.style.cssText="padding:12px 0;border-bottom:1px solid var(--line)";
+ d.innerHTML=`<div class="field"><label>Igicuruzwa</label><select name="productId" required>${available.map(p=>`<option value="${p.id}">${esc(p.name)} — ${fmt(p.price)} (stock ${qty(p.branchStocks[branchId])})</option>`).join("")}</select></div><div class="field"><label>Umubare wagurishijwe</label><input name="quantity" type="number" min="1" max="${Math.max(...available.map(p=>p.branchStocks[branchId]))}" step="1" value="1" required></div>`;
+ $("#saleLines").appendChild(d);
 }
-function drawSaleLines(){
-  const container=$("saleLines");
-  if(!container)return;
-  container.innerHTML=saleLines.map(line=>
-    '<div class="product-line" data-line="'+line.id+'">'+
-    '<select class="line-product" aria-label="Igicuruzwa"><option value="">Hitamo igicuruzwa</option>'+optionList(productsCache,line.productId)+'</select>'+
-    '<input class="line-qty" aria-label="Umubare" type="number" min="1" step="any" value="'+line.quantity+'" required>'+
-    '<input class="line-price" aria-label="Igiciro" type="number" min="0" step="any" value="'+line.price+'" required>'+
-    '<button type="button" class="danger line-remove" title="Kuraho">×</button></div>'
-  ).join("");
-  container.querySelectorAll(".product-line").forEach(el=>{
-    const id=Number(el.dataset.line);
-    const line=saleLines.find(x=>x.id===id);
-    el.querySelector(".line-product").addEventListener("change",e=>{
-      line.productId=e.target.value;
-      const p=productsCache.find(x=>String(val(x,"id","productId"))===String(line.productId));
-      line.price=Number(val(p,"price","sellingPrice","salePrice")||0);
-      drawSaleLines();
-    });
-    el.querySelector(".line-qty").addEventListener("input",e=>{line.quantity=Number(e.target.value)||0;updateSaleTotal();});
-    el.querySelector(".line-price").addEventListener("input",e=>{line.price=Number(e.target.value)||0;updateSaleTotal();});
-    el.querySelector(".line-remove").addEventListener("click",()=>{
-      if(saleLines.length===1){toast("Ugomba kugira nibura igicuruzwa kimwe.",true);return;}
-      saleLines=saleLines.filter(x=>x.id!==id);drawSaleLines();
-    });
-  });
-  updateSaleTotal();
+function sales(){
+ return `<h2>Amateka y'igurisha</h2><div class="print-actions no-print"><button type="button" onclick="printReport()">Capisha amateka (A4)</button></div>${table(["Nimero","Itariki","Ishami","Umukozi","Umukiriya","Telefoni","Igiteranyo"],(state.data.sales||[]).map(s=>`<tr><td>#${s.id}</td><td>${new Date(s.created_at).toLocaleString()}</td><td>${esc(s.branch_name)}</td><td>${esc(s.employee_name||s.username)}</td><td>${esc(s.customer_name||"—")}</td><td>${esc(s.customer_phone||"—")}</td><td><b>${fmt(s.total)}</b></td></tr>`))}`;
 }
-function updateSaleTotal(){
-  const total=saleLines.reduce((sum,l)=>sum+(Number(l.quantity)||0)*(Number(l.price)||0),0);
-  if($("saleTotal"))$("saleTotal").textContent=money(total);
+function movements(){
+ return `<h2>Amateka ya stock</h2><div class="print-actions no-print"><button type="button" onclick="printReport()">Capisha amateka (A4)</button></div>${table(["Itariki","Igicuruzwa","Ishami","Igikorwa","Umubare","Umukozi","Ibisobanuro"],(state.data.history||[]).map(m=>`<tr><td>${new Date(m.created_at).toLocaleString()}</td><td>${esc(m.product_name)}</td><td>${esc(m.branch_name)}</td><td>${esc(m.movement_type)}</td><td>${m.quantity>0?"+":""}${qty(m.quantity)}</td><td>${esc(m.employee_name||m.username)}</td><td>${esc(m.details)}</td></tr>`))}`;
 }
-async function submitSale(e){
-  e.preventDefault();
-  const customerName=$("customerName").value.trim();
-  const customerPhone=$("customerPhone").value.trim();
-  const branchId=$("saleBranch").value;
-  if(!customerName||!customerPhone){toast("Andika amazina na telefoni by'umukiriya.",true);return;}
-  if(!branchId){toast("Hitamo ishami rigurisha.",true);return;}
-  if(!saleLines.length||saleLines.some(l=>!l.productId||l.quantity<=0||l.price<0)){
-    toast("Reba neza ibicuruzwa, umubare n'ibiciro.",true);return;
-  }
-  const submit=e.submitter;
-  submit.disabled=true;
+function reports(){
+ return `<h2>Raporo z'igurisha</h2><div class="print-actions no-print"><button type="button" onclick="printReport()">Capisha raporo (A4)</button></div>${table(["Itariki","Ishami","Igicuruzwa","Umubare","Igiciro","Igiteranyo","Umukiriya","Telefoni","Umukozi"],(state.data.reports||[]).map(r=>`<tr><td>${new Date(r.created_at).toLocaleString()}</td><td>${esc(r.actual_branch_name||r.branch_name)}</td><td>${esc(r.product_name)}</td><td>${qty(r.quantity)}</td><td>${fmt(r.unit_price)}</td><td><b>${fmt(r.total)}</b></td><td>${esc(r.customer_name||"—")}</td><td>${esc(r.customer_phone||"—")}</td><td>${esc(r.employee_name||r.username||"—")}</td></tr>`))}`;
+}
+function users(){
+ return `<h2>Abakozi</h2><form id="userForm"><div class="grid2"><div class="field"><label>Izina ryo kwinjira</label><input name="username" required minlength="3"></div><div class="field"><label>Izina ry'umukozi</label><input name="name" required></div><div class="field"><label>Ijambo ry'ibanga (inyuguti 6+)</label><input name="password" type="password" minlength="6" required></div><div class="field"><label>Ishami</label><select name="branchId" required>${(state.data.branches||[]).filter(b=>b.name!=="Ububiko Bukuru"&&b.active).map(b=>`<option value="${b.id}">${esc(b.name)}</option>`).join("")}</select></div></div><button>Ongeramo umukozi</button></form><h2 style="margin-top:24px">Abakozi bari muri system</h2>${table(["Izina","Izina ryo kwinjira","Uburenganzira","Ishami","Imimerere"],(state.data.users||[]).map(u=>`<tr><td>${esc(u.name)}</td><td>${esc(u.username)}</td><td>${u.role==="admin"?"Admin":"Ishami"}</td><td>${esc(u.branch_name||"—")}</td><td>${u.active?"Akora":"Yahagaritswe"}</td></tr>`))}`;
+}
+function render(){
+ if(!state.data)return;
+ $("#roleLine").textContent=`${state.user.name} · ${isAdmin()?"ADMIN / UMUGENZUZI":"ISHAMI"}`;
+ nav();
+ const views={home,stock,product:productForm,warehouse:warehouseForm,branchStock:branchStockForm,transfer,sale,sales,movements,reports,users};
+ $("#content").innerHTML=(views[state.view]||home)();
+ wire();
+}
+function wire(){
+ const pf=$("#productForm");
+ if(pf)pf.onsubmit=async e=>{
+  e.preventDefault();const f=new FormData(pf);
   try{
-    const result=await api("/api/sale",{method:"POST",body:{
-      branchId,
-      customerName,
-      customerPhone,
-      items:saleLines.map(l=>({productId:l.productId,quantity:l.quantity,price:l.price}))
-    }});
-    toast("Igurisha ryabitswe neza.");
-    if(result.saleId||result.id) printReceipt({
-      id:result.saleId||result.id,
-      customerName,customerPhone,branchId,
-      items:saleLines.map(l=>({...l,name:productName(l.productId)})),
-      total:result.total??saleLines.reduce((s,l)=>s+l.quantity*l.price,0),
-      createdAt:new Date().toISOString()
-    });
-    await loadApp();
-  }catch(err){toast(err.message,true);}
-  finally{submit.disabled=false;}
-}
-
-function printReceipt(sale){
-  const w=window.open("","_blank","width=420,height=650");
-  if(!w){toast("Browser yabujije gufungura inyemezabuguzi. Emerera pop-ups.",true);return;}
-  const items=sale.items.map(i=>'<tr><td>'+escapeHTML(i.name||productName(i.productId))+' × '+escapeHTML(i.quantity)+'</td><td style="text-align:right">'+money(i.quantity*i.price)+'</td></tr>').join("");
-  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Inyemezabuguzi</title><style>body{font-family:Arial,sans-serif;max-width:340px;margin:20px auto;color:#111}h2{text-align:center;margin-bottom:4px}.center{text-align:center}.line{border-top:1px dashed #777;margin:14px 0}table{width:100%;border-collapse:collapse}td{padding:7px 0;font-size:12px}.total{font-size:18px;font-weight:bold;display:flex;justify-content:space-between}@media print{@page{size:80mm auto;margin:5mm}body{margin:0}}</style></head><body><h2>REPORT 1</h2><div class="center">INYEMEZABUGUZI</div><div class="line"></div><p>Nimero: '+escapeHTML(sale.id)+'</p><p>Umukiriya: '+escapeHTML(sale.customerName)+'</p><p>Telefoni: '+escapeHTML(sale.customerPhone)+'</p><p>Ishami: '+escapeHTML(branchName(sale.branchId))+'</p><p>Itariki: '+escapeHTML(dateText(sale.createdAt))+'</p><div class="line"></div><table>'+items+'</table><div class="line"></div><div class="total"><span>IGITERANYO</span><span>'+money(sale.total)+'</span></div><div class="line"></div><div class="center">Murakoze kutugana!</div><script>window.onload=()=>window.print();<\/script></body></html>');
-  w.document.close();
-}
-
-function renderHistory(){
-  const sales=listFrom(appData,"sales","saleHistory").slice().reverse();
-  $("mainContent").innerHTML=pageHead("Amateka y'igurisha","Reba abaguriye, amafaranga n'itariki.")+
-    '<div class="panel"><div class="toolbar"><input id="historySearch" placeholder="Shakisha umukiriya cyangwa telefoni..."><button class="secondary" onclick="loadApp()">↻ Kuvugurura</button></div><div id="historyTable"></div></div>';
-  const draw=()=>{
-    const q=$("historySearch").value.toLowerCase();
-    const filtered=sales.filter(s=>(String(val(s,"customerName","customer_name"))+" "+String(val(s,"customerPhone","customer_phone"))+" "+String(val(s,"id","saleId"))).toLowerCase().includes(q));
-    const rows=filtered.map(s=>[
-      escapeHTML(val(s,"id","saleId")||"—"),
-      '<b>'+escapeHTML(val(s,"customerName","customer_name")||"—")+'</b>',
-      escapeHTML(val(s,"customerPhone","customer_phone")||"—"),
-      escapeHTML(branchName(val(s,"branchId","branch_id"))),
-      '<b>'+money(val(s,"total","totalAmount","amount"))+'</b>',
-      escapeHTML(dateText(val(s,"createdAt","created_at","date")))
-    ]);
-    $("historyTable").innerHTML=table(["Nimero","Umukiriya","Telefoni","Ishami","Amafaranga","Itariki"],rows);
+   const d=await api("/api/products",{method:"POST",body:JSON.stringify({name:f.get("name"),sellingPrice:Number(f.get("sellingPrice")),costPrice:Number(f.get("costPrice"))})});
+   const n=Number(f.get("quantity"));
+   if(n>0)await api("/api/warehouse/stock",{method:"POST",body:JSON.stringify({productId:d.product.id,quantity:n,details:"Stock ya mbere y'igicuruzwa gishya"})});
+   state.view="stock";await load();notify("Igicuruzwa cyongeweho neza.");
+  }catch(x){notify(x.message,true)}
+ };
+ const wf=$("#warehouseForm");
+ if(wf)wf.onsubmit=async e=>{
+  e.preventDefault();const f=new FormData(wf);
+  try{
+   await api("/api/warehouse/stock",{method:"POST",body:JSON.stringify({productId:Number(f.get("productId")),quantity:Number(f.get("quantity")),details:f.get("details")})});
+   await load();state.view="warehouse";render();notify("Stock yongewe mu bubiko bukuru.");
+  }catch(x){notify(x.message,true)}
+ };
+ const tf=$("#transferForm");
+ if(tf)tf.onsubmit=async e=>{
+  e.preventDefault();const f=new FormData(tf);
+  try{
+   await api("/api/transfer",{method:"POST",body:JSON.stringify({productId:Number(f.get("productId")),toBranch:Number(f.get("toBranch")),quantity:Number(f.get("quantity"))})});
+   await load();state.view="transfer";render();notify("Stock yoherejwe ku ishami.");
+  }catch(x){notify(x.message,true)}
+ };
+ const sf=$("#saleForm");
+ if(sf){
+  addSaleLine();
+  $("#addLine").onclick=addSaleLine;
+  if($("#saleBranch"))$("#saleBranch").onchange=()=>{$("#saleLines").innerHTML="";addSaleLine()};
+  sf.onsubmit=async e=>{
+   e.preventDefault();
+   const customerName=String(sf.querySelector('[name="customerName"]').value||"").trim();
+   const customerPhone=String(sf.querySelector('[name="customerPhone"]').value||"").trim();
+   if(!customerName||!customerPhone){notify("Andika amazina na telefoni by'umukiriya.",true);return}
+   const items=[...sf.querySelectorAll(".sale-line")].map(d=>({productId:Number(d.querySelector('[name="productId"]').value),quantity:Number(d.querySelector('[name="quantity"]').value)})).filter(x=>x.productId&&x.quantity>0);
+   if(!items.length){notify("Hitamo ibicuruzwa n'umubare.",true);return}
+   const branchId=isAdmin()?Number($("#saleBranch").value):Number(state.user.branchId);
+   const b=(state.data.branches||[]).find(x=>Number(x.id)===branchId);
+   const pmap=products();
+   const receiptItems=items.map(i=>{const p=pmap.find(x=>x.id===i.productId);return {name:p.name,quantity:i.quantity,price:p.price,total:i.quantity*p.price}});
+   try{
+    const d=await api("/api/sale",{method:"POST",body:JSON.stringify({branchId,items,customerName,customerPhone})});
+    state.receipt={id:d.saleId,total:Number(d.total),items:receiptItems,branch:b?.name||"Ishami",customerName,customerPhone,date:new Date()};
+    await load();state.view="sale";render();
+    $("#receipt").innerHTML=receiptHTML(state.receipt);
+    notify("Igurisha ryemejwe. Ushobora gucapa inyemezabuguzi.");
+   }catch(x){notify(x.message,true)}
   };
-  $("historySearch").addEventListener("input",draw);draw();
-}
-
-function renderMovements(){
-  if(!isAdmin())return;
-  const movements=listFrom(appData,"movements","stockMovements","transfers").slice().reverse();
-  const rows=movements.map(m=>[
-    escapeHTML(val(m,"type","action","movementType")||"Stock"),
-    escapeHTML(productName(val(m,"productId","product_id"))),
-    escapeHTML(val(m,"quantity","qty")||0),
-    escapeHTML(branchName(val(m,"branchId","toBranchId","branch_id"))),
-    escapeHTML(val(m,"note","description")||"—"),
-    escapeHTML(dateText(val(m,"createdAt","created_at","date")))
-  ]);
-  $("mainContent").innerHTML=pageHead("Amateka ya stock","Reba uko stock yagiye yinjira cyangwa yoherezwa.")+
-    '<div class="panel"><div class="toolbar"><button class="secondary" onclick="loadApp()">↻ Kuvugurura</button><button class="primary" onclick="window.print()">Shyira kuri printer</button></div>'+
-    table(["Igikorwa","Igicuruzwa","Umubare","Ishami","Ibisobanuro","Itariki"],rows)+'</div>';
-}
-
-function renderReports(){
-  const sales=listFrom(appData,"sales","saleHistory");
-  const total=sales.reduce((s,x)=>s+Number(val(x,"total","totalAmount","amount")||0),0);
-  const rows=sales.slice().reverse().map(s=>[
-    escapeHTML(val(s,"customerName","customer_name")||"—"),
-    escapeHTML(val(s,"customerPhone","customer_phone")||"—"),
-    escapeHTML(branchName(val(s,"branchId","branch_id"))),
-    money(val(s,"total","totalAmount","amount")),
-    escapeHTML(dateText(val(s,"createdAt","created_at","date")))
-  ]);
-  $("mainContent").innerHTML=pageHead("Raporo","Incamake y'ibyagurishijwe n'amafaranga.")+
-    '<div class="cards">'+stat("Igurisha ryose",money(total),"↗","Amafaranga yose aboneka mu mateka")+
-    stat("Umubare w'igurisha",sales.length,"▤","Inyemezabuguzi zanditswe")+
-    stat("Ibicuruzwa",productsCache.length,"▣","Ibicuruzwa muri sisitemu")+
-    stat("Amashami",branchesCache.length,"🏬","Amashami yanditswe")+'</div>'+
-    '<div class="panel"><div class="panel-head"><h2>Raporo y\'igurisha</h2><button class="primary" onclick="window.print()">Shyira kuri printer</button></div>'+
-    table(["Umukiriya","Telefoni","Ishami","Amafaranga","Itariki"],rows)+'</div>';
-}
-
-async function renderUsers(){
-  if(!isAdmin())return;
-  $("mainContent").innerHTML=pageHead("Abakozi","Reba konti z'abakozi n'amashami bakoreramo.")+
-    '<div class="panel"><div class="toolbar"><button id="loadUsersBtn" class="primary">Reba abakozi</button></div><div id="usersTable"><div class="empty">Kanda kuri “Reba abakozi”.</div></div></div>';
-  $("loadUsersBtn").addEventListener("click",async()=>{
-    try{
-      const result=await api("/api/users");
-      const users=listFrom(result,"users","data");
-      $("usersTable").innerHTML=table(["Izina","Izina ryo kwinjira","Uruhare","Ishami"],users.map(u=>[
-        escapeHTML(val(u,"name","fullName")||"—"),
-        escapeHTML(val(u,"username")||"—"),
-        '<span class="badge blue">'+escapeHTML(val(u,"role")||"—")+'</span>',
-        escapeHTML(branchName(val(u,"branchId","branch_id"))||"—")
-      ]));
-    }catch(err){$("usersTable").innerHTML='<div class="notice error">'+escapeHTML(err.message)+'</div>';}
-  });
-}
-
-(async function init(){
+ }
+ const uf=$("#userForm");
+ if(uf)uf.onsubmit=async e=>{
+  e.preventDefault();const f=new FormData(uf);
   try{
-    const me=await api("/api/me");
-    if(me && me.user){
-      currentUser=me.user;
-      await loadApp();
-    }else{
-      showLogin();
-    }
-  }catch(e){showLogin();}
-})();
+   await api("/api/users",{method:"POST",body:JSON.stringify({username:f.get("username"),name:f.get("name"),password:f.get("password"),branchId:Number(f.get("branchId"))})});
+   await load();state.view="users";render();notify("Umukozi yongeweho.");
+  }catch(x){notify(x.message,true)}
+ };
+}
+function receiptHTML(r){
+ return `<div class="receipt"><h3>REPORT 1</h3><p>Ishami: ${esc(r.branch)}</p><p>Inyemezabuguzi: #${r.id}</p><p>Itariki: ${r.date.toLocaleString("rw-RW")}</p><p>Umukiriya: ${esc(r.customerName||"—")}</p><p>Telefoni: ${esc(r.customerPhone||"—")}</p><hr>${r.items.map(i=>`<div class="product-name">${esc(i.name)}</div><div class="receipt-line product-detail"><span>${qty(i.quantity)} × ${fmt(i.price)}</span><span>${fmt(i.total)}</span></div>`).join("")}<hr><div class="receipt-line"><b>IGITERANYO</b><b>${fmt(r.total)}</b></div><p style="text-align:center">Murakoze kutugana!</p><div class="print-actions no-print"><button type="button" onclick="printReceipt('thermal')">Capisha Thermal</button><button type="button" class="secondary" onclick="printReceipt('a4')">Capisha A4</button></div></div>`;
+}
+boot();
 </script>
 </body>
 </html>
